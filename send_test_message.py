@@ -55,11 +55,12 @@ def send_message(chat_id: str, message: str):
         return False
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        # 如果没有提供参数，尝试使用配置文件中的 chat_id
+    # 解析命令行参数
+    if len(sys.argv) == 1:
+        # 没有任何参数，使用配置文件中的chat_id和默认消息
         if FEISHU_CHAT_ID:
             chat_id = FEISHU_CHAT_ID
-            message = sys.argv[1] if len(sys.argv) > 1 else "测试消息：这是一条自动化测试消息"
+            message = "测试消息：这是一条自动化测试消息"
             print(f"使用配置文件中的 chat_id: {chat_id}")
         else:
             print("使用方法：")
@@ -70,14 +71,34 @@ if __name__ == "__main__":
             print()
             print("示例：")
             print("  python send_test_message.py oc_xxxxx \"测试消息\"")
+            print("  python send_test_message.py \"测试消息\"  # 使用.env中的chat_id")
             print()
             print("如何获取 chat_id：")
             print("  1. 先手动给机器人发一条消息")
             print("  2. 在机器人日志中查看 chat_id")
             sys.exit(1)
+    elif len(sys.argv) == 2:
+        # 一个参数：可能是chat_id或消息
+        arg = sys.argv[1]
+        if arg.startswith("oc_"):
+            # 看起来像chat_id
+            chat_id = arg
+            message = "测试消息：这是一条自动化测试消息"
+        else:
+            # 看起来像消息，使用配置文件中的chat_id
+            if FEISHU_CHAT_ID:
+                chat_id = FEISHU_CHAT_ID
+                message = arg
+                print(f"使用配置文件中的 chat_id: {chat_id}")
+            else:
+                print("❌ 错误: 未配置 FEISHU_CHAT_ID")
+                print("请在 .env 文件中设置 FEISHU_CHAT_ID，或者提供完整参数：")
+                print("  python send_test_message.py <chat_id> <message>")
+                sys.exit(1)
     else:
+        # 两个或更多参数
         chat_id = sys.argv[1]
-        message = sys.argv[2] if len(sys.argv) > 2 else "测试消息：这是一条自动化测试消息"
+        message = sys.argv[2]
     
     print(f"\n发送消息到: {chat_id}")
     print(f"消息内容: {message}\n")
