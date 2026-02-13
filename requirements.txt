@@ -1,0 +1,17 @@
+# 飞书机器人依赖包
+
+# 飞书开放平台SDK
+lark-oapi>=1.2.0
+
+# SSL证书处理
+certifi>=2023.0.0
+
+# 环境变量管理
+python-dotenv>=1.0.0
+
+# 测试框架（可选，用于单元测试）
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# 属性测试框架（可选，用于property-based testing）
+hypothesis>=6.82.0
