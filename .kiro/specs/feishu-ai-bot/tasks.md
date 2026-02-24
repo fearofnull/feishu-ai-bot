@@ -34,7 +34,7 @@
   - 测试默认值设置
   - _Requirements: 8.1, 8.2, 8.3_
 
-- [ ] 2. 实现消息去重缓存
+- [x] 2. 实现消息去重缓存
   - [x] 2.1 创建 `DeduplicationCache` 类
     - 使用 `collections.deque` 实现 FIFO 队列
     - 实现 `is_processed(message_id)` 方法
@@ -50,7 +50,7 @@
     - **Property 6: 缓存容量限制**
     - **Validates: Requirements 2.4, 2.5**
 
-- [ ] 3. 实现消息处理器
+- [x] 3. 实现消息处理器
   - [x] 3.1 创建 `MessageHandler` 类
     - 实现 `parse_message_content(message)` 方法，提取文本内容
     - 处理非文本消息，返回友好错误提示
@@ -138,12 +138,12 @@
     - 测试归档会话功能
     - _Requirements: 10.3_
 
-- [ ] 5. 实现命令解析器
-  - [-] 5.1 创建 `ParsedCommand` 数据类
+- [x] 5. 实现命令解析器
+  - [x] 5.1 创建 `ParsedCommand` 数据类
     - 实现数据类（provider, execution_layer, message, explicit）
     - _Requirements: 11.6_
 
-  - [~] 5.2 创建 `CommandParser` 类
+  - [x] 5.2 创建 `CommandParser` 类
     - 实现 `parse_command(message)` 方法，返回 ParsedCommand
     - 实现 `extract_provider_prefix(message)` 方法，提取 AI 提供商前缀
     - 支持的前缀：@claude-api, @claude, @gemini-api, @gemini, @openai, @gpt, @claude-cli, @code, @gemini-cli
@@ -153,27 +153,27 @@
     - 去除前缀后返回实际消息内容
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7_
 
-  - [~] 5.3 编写命令前缀解析属性测试
+  - [x] 5.3 编写命令前缀解析属性测试
     - **Property 36: 命令前缀解析**
     - **Validates: Requirements 11.1, 11.2, 11.3, 11.4, 11.5, 11.7, 11.8**
 
-  - [~] 5.4 编写 CLI 关键词检测属性测试
+  - [x] 5.4 编写 CLI 关键词检测属性测试
     - **Property 37: CLI 关键词检测**
     - **Validates: Requirements 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7**
 
-  - [~] 5.5 编写命令解析单元测试
+  - [x] 5.5 编写命令解析单元测试
     - 测试各种前缀组合
     - 测试大小写不敏感
     - 测试前缀去除
     - 测试 CLI 关键词检测（中英文）
     - _Requirements: 11.8, 12.7_
 
-- [ ] 6. 实现智能路由器和执行器注册表
-  - [~] 6.1 创建 `ExecutorMetadata` 数据类
+- [x] 6. 实现智能路由器和执行器注册表
+  - [x] 6.1 创建 `ExecutorMetadata` 数据类
     - 实现数据类（name, provider, layer, version, description, capabilities, command_prefixes, priority, config_required）
     - _Requirements: 13.7_
 
-  - [~] 6.2 创建 `ExecutorRegistry` 类
+  - [x] 6.2 创建 `ExecutorRegistry` 类
     - 实现 `__init__()` 方法，初始化执行器字典和元数据字典
     - 实现 `register_api_executor(provider, executor, metadata)` 方法
     - 实现 `register_cli_executor(provider, executor, metadata)` 方法
@@ -185,7 +185,7 @@
     - 支持从配置文件加载执行器注册信息
     - _Requirements: 13.7, 16.1, 16.2, 16.3, 16.5_
 
-  - [~] 6.3 创建 `SmartRouter` 类
+  - [x] 6.3 创建 `SmartRouter` 类
     - 实现 `__init__(executor_registry, default_provider, default_layer)` 方法
     - 实现 `route(parsed_command)` 方法，返回合适的执行器
     - 实现 `get_executor(provider, layer)` 方法，通过 ExecutorRegistry 获取指定执行器
@@ -195,26 +195,26 @@
     - 记录降级日志
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8_
 
-  - [~] 6.4 编写执行器注册表单元测试
+  - [x] 6.4 编写执行器注册表单元测试
     - 测试执行器注册
     - 测试执行器获取
     - 测试执行器可用性检查
     - 测试元数据管理
     - _Requirements: 13.7, 16.5_
 
-  - [~] 6.5 编写智能路由显式指定属性测试
+  - [x] 6.5 编写智能路由显式指定属性测试
     - **Property 38: 智能路由显式指定优先**
     - **Validates: Requirements 13.1**
 
-  - [~] 6.6 编写智能路由降级策略属性测试
+  - [x] 6.6 编写智能路由降级策略属性测试
     - **Property 39: 智能路由降级策略**
     - **Validates: Requirements 13.4, 13.5, 13.6**
 
-  - [~] 6.7 编写路由层选择一致性属性测试
+  - [x] 6.7 编写路由层选择一致性属性测试
     - **Property 46: 路由层选择一致性**
     - **Validates: Requirements 13.2, 13.3**
 
-  - [~] 6.8 编写智能路由单元测试
+  - [x] 6.8 编写智能路由单元测试
     - 测试显式指定路由
     - 测试智能判断路由
     - 测试降级策略
@@ -222,13 +222,13 @@
     - 测试默认提供商和层配置
     - _Requirements: 13.7, 13.8_
 
-- [ ] 7. 实现 AI API 执行器
-  - [~] 7.1 创建 `AIAPIExecutor` 抽象基类
+- [x] 7. 实现 AI API 执行器
+  - [x] 7.1 创建 `AIAPIExecutor` 抽象基类
     - 定义抽象方法：`execute()`, `get_provider_name()`, `format_messages()`
     - 实现共享的初始化逻辑（api_key, model, timeout）
     - _Requirements: 14.1, 14.2, 14.3_
 
-  - [~] 7.2 实现 `ClaudeAPIExecutor` 类
+  - [x] 7.2 实现 `ClaudeAPIExecutor` 类
     - 实现 `__init__(api_key, model, timeout)` 方法，默认模型 claude-3-5-sonnet-20241022
     - 实现 `get_provider_name()` 方法，返回 "claude-api"
     - 实现 `format_messages(user_prompt, conversation_history)` 方法，格式化为 Claude API 消息格式
@@ -241,7 +241,7 @@
     - 返回 ExecutionResult
     - _Requirements: 14.1, 14.4, 14.5, 14.6, 14.7, 14.8, 14.9, 14.10, 15.1, 15.2, 15.5, 15.6_
 
-  - [~] 7.3 实现 `GeminiAPIExecutor` 类
+  - [x] 7.3 实现 `GeminiAPIExecutor` 类
     - 实现 `__init__(api_key, model, timeout)` 方法，默认模型 gemini-2.0-flash-exp
     - 实现 `get_provider_name()` 方法，返回 "gemini-api"
     - 实现 `format_messages(user_prompt, conversation_history)` 方法，格式化为 Gemini API 消息格式（assistant→model）
@@ -254,7 +254,7 @@
     - 返回 ExecutionResult
     - _Requirements: 14.2, 14.4, 14.5, 14.6, 14.7, 14.8, 14.9, 14.10, 15.1, 15.3, 15.5, 15.6_
 
-  - [~] 7.4 实现 `OpenAIAPIExecutor` 类
+  - [x] 7.4 实现 `OpenAIAPIExecutor` 类
     - 实现 `__init__(api_key, model, timeout)` 方法，默认模型 gpt-4o
     - 实现 `get_provider_name()` 方法，返回 "openai-api"
     - 实现 `format_messages(user_prompt, conversation_history)` 方法，格式化为 OpenAI API 消息格式
@@ -267,31 +267,31 @@
     - 返回 ExecutionResult
     - _Requirements: 14.3, 14.4, 14.5, 14.6, 14.7, 14.8, 14.9, 14.10, 15.1, 15.4, 15.5, 15.6_
 
-  - [~] 7.5 编写 Claude API 消息格式化属性测试
+  - [x] 7.5 编写 Claude API 消息格式化属性测试
     - **Property 40: Claude API 消息格式化**
     - **Validates: Requirements 15.2**
 
-  - [~] 7.6 编写 Gemini API 消息格式化属性测试
+  - [x] 7.6 编写 Gemini API 消息格式化属性测试
     - **Property 41: Gemini API 消息格式化**
     - **Validates: Requirements 15.3**
 
-  - [~] 7.7 编写 OpenAI API 消息格式化属性测试
+  - [x] 7.7 编写 OpenAI API 消息格式化属性测试
     - **Property 42: OpenAI API 消息格式化**
     - **Validates: Requirements 15.4**
 
-  - [~] 7.8 编写 API 执行成功响应属性测试
+  - [x] 7.8 编写 API 执行成功响应属性测试
     - **Property 43: API 执行成功响应**
     - **Validates: Requirements 14.7**
 
-  - [~] 7.9 编写 API 执行错误处理属性测试
+  - [x] 7.9 编写 API 执行错误处理属性测试
     - **Property 44: API 执行错误处理**
     - **Validates: Requirements 14.4, 14.5, 14.6**
 
-  - [~] 7.10 编写 API 对话历史上下文属性测试
+  - [x] 7.10 编写 API 对话历史上下文属性测试
     - **Property 45: API 对话历史上下文**
     - **Validates: Requirements 14.8, 15.1, 15.6**
 
-  - [~] 7.11 编写 API 执行器单元测试
+  - [x] 7.11 编写 API 执行器单元测试
     - 测试 API 密钥缺失错误
     - 测试超时处理
     - 测试 API 错误处理（配额超限、模型不可用等）
@@ -299,8 +299,8 @@
     - 测试可选参数传递
     - _Requirements: 14.4, 14.5, 14.6, 14.10_
 
-- [ ] 8. 实现执行器可用性检查
-  - [~] 8.1 创建 `ExecutorNotAvailableError` 异常类
+- [~] 8. 实现执行器可用性检查
+  - [x] 8.1 创建 `ExecutorNotAvailableError` 异常类
     - 实现自定义异常类，包含 provider, layer, reason 字段
     - _Requirements: 16.3_
 
@@ -328,7 +328,7 @@
 - [~] 9. Checkpoint - 确保智能路由和 API 执行器测试通过
   - 确保所有测试通过，如有问题请询问用户
 
-- [ ] 10. 临时配置管理器
+- [~] 10. 临时配置管理器
   - [~] 10.1 创建 `TempConfigManager` 类
     - 实现 `create_temp_dir()` 方法，使用 `tempfile.mkdtemp(prefix="claude_")`
     - 实现 `cleanup(temp_dir)` 方法，删除临时目录
@@ -347,13 +347,13 @@
     - 测试清理失败的日志记录
     - _Requirements: 4.4_
 
-- [ ] 11. 实现 AI CLI 执行器接口和实现
-  - [~] 11.1 创建 `AICLIExecutor` 抽象基类
+- [~] 11. 实现 AI CLI 执行器接口和实现
+  - [x] 11.1 创建 `AICLIExecutor` 抽象基类
     - 定义抽象方法：`execute()`, `verify_directory()`, `get_command_name()`, `build_command_args()`
     - 实现共享的初始化逻辑（target_dir, timeout）
     - _Requirements: 3.1, 3.2_
 
-  - [~] 11.2 实现 `ClaudeCodeCLIExecutor` 类
+  - [x] 11.2 实现 `ClaudeCodeCLIExecutor` 类
     - 实现 `get_command_name()`，根据操作系统返回 `claude.cmd` 或 `claude`
     - 实现 `__init__()`，支持 `use_native_session` 参数和 `session_storage_path` 参数
     - 实现 `get_or_create_claude_session(user_id)` 方法，管理 Claude Code 会话
@@ -372,7 +372,7 @@
     - 捕获 stdout 和 stderr
     - _Requirements: 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 10.11, 10.12, 10.14_
 
-  - [~] 11.3 实现 `GeminiCLIExecutor` 类
+  - [x] 11.3 实现 `GeminiCLIExecutor` 类
     - 实现 `get_command_name()`，返回 `gemini`
     - 实现 `__init__()`，支持 `use_native_session` 参数和 `session_storage_path` 参数
     - 实现 `get_or_create_gemini_session(user_id)` 方法，管理 Gemini CLI 会话
@@ -412,7 +412,7 @@
     - **Property 11: 命令输出捕获**
     - **Validates: Requirements 3.9**
 
-  - [~] 11.9 编写 AI CLI 执行器单元测试
+  - [x] 11.9 编写 AI CLI 执行器单元测试
     - 测试命令超时处理
     - 测试 AI CLI 未安装错误
     - 测试 UTF-8 编码处理
@@ -436,7 +436,7 @@
 - [~] 12. Checkpoint - 确保核心组件测试通过
   - 确保所有测试通过，如有问题请询问用户
 
-- [ ] 13. 实现响应格式化器
+- [~] 13. 实现响应格式化器
   - [~] 13.1 创建 `ResponseFormatter` 类
     - 实现 `format_response(user_message, ai_output, error)` 方法
     - 成功响应格式：包含原始消息和 AI 输出
@@ -455,7 +455,7 @@
     - 测试包含原始消息
     - _Requirements: 5.3_
 
-- [ ] 14. 实现消息发送器
+- [~] 14. 实现消息发送器
   - [~] 14.1 创建 `MessageSender` 类
     - 实现 `send_message(chat_type, chat_id, message_id, content)` 方法
     - 实现 `send_new_message(chat_id, content)` 方法，调用 `im.v1.message.create`
@@ -477,7 +477,7 @@
     - 测试异常信息包含 code, msg, log_id
     - _Requirements: 6.3_
 
-- [ ] 15. 实现日志记录策略
+- [~] 15. 实现日志记录策略
   - [~] 15.1 配置日志系统
     - 设置日志格式（时间戳、级别、模块、消息）
     - 配置日志级别（支持通过环境变量配置）
@@ -502,14 +502,14 @@
     - **Property 19: 引用消息检索日志记录**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.4**
 
-- [ ] 16. 实现事件处理器和 WebSocket 客户端
-  - [~] 16.1 创建 `EventHandler` 类
+- [x] 16. 实现事件处理器和 WebSocket 客户端
+  - [x] 16.1 创建 `EventHandler` 类
     - 实现 `register_message_receive_handler(handler)` 方法
     - 实现 `dispatch_event(event)` 方法
     - 使用 `lark_oapi.EventDispatcherHandler` 作为基础
     - _Requirements: 9.3_
 
-  - [ ] 16.2 创建 `WebSocketClient` 类
+  - [x] 16.2 创建 `WebSocketClient` 类
     - 实现 `__init__(app_id, app_secret, event_handler)` 方法
     - 实现 `start()` 方法，建立 WebSocket 连接
     - 实现 `stop()` 方法，关闭连接
@@ -518,31 +518,31 @@
     - 处理连接失败，记录错误日志
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ] 16.3 编写 WebSocket 事件路由属性测试
+  - [x] 16.3 编写 WebSocket 事件路由属性测试
     - **Property 20: WebSocket 事件路由**
     - **Validates: Requirements 9.3**
 
-  - [ ] 16.4 编写 WebSocket 客户端单元测试
+  - [x] 16.4 编写 WebSocket 客户端单元测试
     - 测试连接建立
     - 测试事件处理器注册
     - 测试连接失败处理
     - _Requirements: 9.1, 9.2, 9.5_
 
-- [ ] 17. 实现 SSL 证书配置
-  - [ ] 17.1 创建 SSL 配置函数
+- [x] 17. 实现 SSL 证书配置
+  - [x] 17.1 创建 SSL 配置函数
     - 实现 `configure_ssl()` 函数
     - 设置 `SSL_CERT_FILE` 环境变量为 certifi 证书路径
     - 清除 `SSL_CERT_DIR` 环境变量
     - 在应用启动时调用
     - _Requirements: 8.1, 8.2, 8.3_
 
-  - [ ] 17.2 编写 SSL 配置单元测试
+  - [x] 17.2 编写 SSL 配置单元测试
     - 测试 SSL_CERT_FILE 设置
     - 测试 SSL_CERT_DIR 清除
     - _Requirements: 8.1, 8.2_
 
-- [ ] 18. 集成所有组件并重构主程序
-  - [ ] 18.1 创建主应用类 `FeishuBot`
+- [x] 18. 集成所有组件并重构主程序
+  - [x] 18.1 创建主应用类 `FeishuBot`
     - 初始化所有组件（配置、缓存、处理器、发送器、会话管理器、命令解析器、执行器注册表、智能路由器等）
     - 初始化并注册 AI API 执行器（Claude API、Gemini API、OpenAI API）
     - 初始化并注册 AI CLI 执行器（Claude Code CLI、Gemini CLI）
@@ -566,14 +566,14 @@
     - 支持动态添加新 Agent（通过配置文件或 API）
     - _Requirements: 所有需求_
 
-  - [ ] 18.2 重构 `lark_bot.py` 主程序
+  - [x] 18.2 重构 `lark_bot.py` 主程序
     - 使用新的模块化组件替换原有代码
     - 保持向后兼容（如果需要）
     - 添加命令行参数支持（配置文件路径、日志级别等）
     - 添加会话清理定时任务（清理过期会话）
     - _Requirements: 所有需求_
 
-  - [ ] 18.3 编写集成测试
+  - [x] 18.3 编写集成测试
     - 测试完整的消息处理流程
     - 测试命令解析和智能路由流程
     - 测试 API 层执行流程（Claude API、Gemini API、OpenAI API）
@@ -587,14 +587,14 @@
     - 测试不同聊天类型的消息发送
     - _Requirements: 所有需求_
 
-- [ ] 19. 最终检查点 - 确保所有测试通过
+- [~] 19. 最终检查点 - 确保所有测试通过
   - 运行所有单元测试和属性测试
   - 验证代码覆盖率
   - 确保所有需求都有对应的测试
   - 如有问题请询问用户
 
-- [ ] 20. 创建文档和示例
-  - [ ] 20.1 更新 README.md
+- [~] 20. 创建文档和示例
+  - [~] 20.1 更新 README.md
     - 添加安装说明
     - 添加配置说明（包括 AI API 密钥、会话管理配置、默认提供商和层配置）
     - 添加使用示例（包括命令前缀使用、会话命令使用）
@@ -615,11 +615,11 @@
       - 飞书 API: https://open.feishu.cn/api-explorer, https://open.feishu.cn/document/server-side-sdk/python--sdk
     - 添加故障排查指南
 
-  - [ ] 20.2 创建 `.env.example` 文件
+  - [~] 20.2 创建 `.env.example` 文件
     - 列出所有配置项（包括 AI API 密钥、会话存储路径、最大消息数、超时时间、默认提供商和层）
     - 提供示例值和说明
 
-  - [ ] 20.3 添加代码注释和文档字符串
+  - [~] 20.3 添加代码注释和文档字符串
     - 为所有公共类和方法添加文档字符串
     - 添加类型注解
     - 添加使用示例（特别是智能路由、会话管理和双层会话策略相关的）

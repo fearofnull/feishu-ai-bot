@@ -1,0 +1,28 @@
+{
+  "session_id": "07c1f241-7529-453d-a6b5-b5be658be6cd",
+  "user_id": "test_user",
+  "created_at": 1770989758,
+  "last_active": 1770989829,
+  "messages": [
+    {
+      "role": "user",
+      "content": "消息 2",
+      "timestamp": 1770989758
+    },
+    {
+      "role": "user",
+      "content": "消息 3",
+      "timestamp": 1770989758
+    },
+    {
+      "role": "user",
+      "content": "消息 4",
+      "timestamp": 1770989758
+    },
+    {
+      "role": "user",
+      "content": "触发轮换",
+      "timestamp": 1770989758
+    }
+  ]
+}

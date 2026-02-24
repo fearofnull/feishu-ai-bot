@@ -12,9 +12,17 @@ python-dotenv>=1.0.0
 # 文件锁（用于会话管理并发控制）
 filelock>=3.12.0
 
+# 定时任务调度
+schedule>=1.2.0
+
 # 测试框架（可选，用于单元测试）
 pytest>=7.4.0
 pytest-cov>=4.1.0
 
 # 属性测试框架（可选，用于property-based testing）
 hypothesis>=6.82.0
+
+# AI API SDKs
+anthropic>=0.39.0  # Claude API
+google-generativeai>=0.8.0  # Gemini API
+openai>=1.0.0  # OpenAI API

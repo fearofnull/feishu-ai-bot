@@ -17,7 +17,9 @@ class BotConfig:
     app_secret: str
     
     # AI CLI 配置
-    target_directory: str
+    target_directory: str  # 通用目标目录（兼容旧配置）
+    claude_cli_target_dir: Optional[str] = None  # Claude CLI 专用目录
+    gemini_cli_target_dir: Optional[str] = None  # Gemini CLI 专用目录
     ai_timeout: int = 600
     
     # 缓存配置
@@ -35,6 +37,8 @@ class BotConfig:
     claude_api_key: Optional[str] = None
     gemini_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
+    openai_base_url: Optional[str] = None
+    openai_model: str = "gpt-4o"
     
     # 默认设置
     default_provider: str = "claude"
@@ -91,6 +95,8 @@ class BotConfig:
             claude_api_key=os.getenv("CLAUDE_API_KEY"),
             gemini_api_key=os.getenv("GEMINI_API_KEY"),
             openai_api_key=os.getenv("OPENAI_API_KEY"),
+            openai_base_url=os.getenv("OPENAI_BASE_URL"),
+            openai_model=os.getenv("OPENAI_MODEL", "gpt-4o"),
             
             # 默认设置
             default_provider=os.getenv("DEFAULT_PROVIDER", "claude"),

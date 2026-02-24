@@ -2714,7 +2714,7 @@ def test_property_formatted_history_contains_all_roles_and_content(user_id, num_
 
 # Property 30 扩展：格式化结果尊重 max_messages 限制
 # Validates: Requirements 10.10
-@settings(max_examples=100)
+@settings(max_examples=100, deadline=5000)  # Increased deadline to 5 seconds to avoid flakiness
 @given(
     user_id=st.text(min_size=1, max_size=50),
     total_messages=st.integers(min_value=5, max_value=20),

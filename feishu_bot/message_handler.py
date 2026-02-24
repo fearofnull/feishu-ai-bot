@@ -29,11 +29,11 @@ class MessageHandler:
         self.client = client
         self.dedup_cache = dedup_cache
     
-    def parse_message_content(self, message: dict) -> str:
+    def parse_message_content(self, message) -> str:
         """解析消息内容，提取文本内容
         
         Args:
-            message: 飞书消息对象，包含 message_type 和 content 字段
+            message: 飞书消息对象（EventMessage 或 dict），包含 message_type 和 content 字段
             
         Returns:
             提取的文本内容
@@ -41,7 +41,15 @@ class MessageHandler:
         Raises:
             ValueError: 如果消息类型不是文本或解析失败
         """
-        message_type = message.get("message_type", "")
+        # 处理 EventMessage 对象或字典
+        if hasattr(message, 'message_type'):
+            # EventMessage 对象
+            message_type = message.message_type
+            content_str = message.content
+        else:
+            # 字典
+            message_type = message.get("message_type", "")
+            content_str = message.get("content", "{}")
         
         # 检查消息类型
         if message_type != "text":
@@ -51,7 +59,6 @@ class MessageHandler:
         
         # 解析消息内容
         try:
-            content_str = message.get("content", "{}")
             content = json.loads(content_str)
             text = content.get("text", "")
             
