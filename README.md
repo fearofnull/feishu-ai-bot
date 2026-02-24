@@ -724,7 +724,6 @@ python -c "from feishu_bot.session_manager import SessionManager; sm = SessionMa
 ├── config.py                # 配置管理
 ├── requirements.txt         # Python依赖
 ├── README.md                # 项目说明
-├── SECURITY.md              # 安全说明
 ├── .env                     # 环境变量（不提交到Git）
 ├── .env.example             # 环境变量模板
 ├── .gitignore               # Git忽略文件配置
@@ -829,8 +828,6 @@ MIT License
 - **定期轮换API密钥**
   - 建议每3-6个月更换一次API密钥
   - 如发现密钥泄露，立即在对应平台重置
-
-详细安全指南见：[SECURITY.md](SECURITY.md)
 
 ## 数据隐私
 

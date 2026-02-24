@@ -129,7 +129,6 @@
 
 ### 项目文档
 - [主README](../README.md) - 项目概述和架构
-- [SECURITY.md](../SECURITY.md) - 安全指南
 
 ### 外部资源
 - [飞书开放平台](https://open.feishu.cn/)
