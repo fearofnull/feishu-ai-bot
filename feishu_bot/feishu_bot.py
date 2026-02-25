@@ -298,12 +298,17 @@ class FeishuBot:
                 )
                 
                 # 获取执行器元数据
-                provider = executor.get_provider_name().replace("-api", "").replace("-cli", "")
-                # 判断layer
-                if executor.get_provider_name().endswith("-api"):
-                    layer = "api"
+                provider_name = executor.get_provider_name()  # e.g., "openai-api", "claude-cli"
+                
+                # 解析 provider 和 layer
+                if "-" in provider_name:
+                    parts = provider_name.rsplit("-", 1)  # 从右边分割一次
+                    provider = parts[0]  # e.g., "openai", "claude"
+                    layer = parts[1]     # e.g., "api", "cli"
                 else:
-                    layer = "cli"
+                    # 兜底：如果没有连字符，假设是 API
+                    provider = provider_name
+                    layer = "api"
                 
                 executor_metadata = self.executor_registry.get_executor_metadata(provider, layer)
                 executor_name = executor_metadata.name if executor_metadata else None
