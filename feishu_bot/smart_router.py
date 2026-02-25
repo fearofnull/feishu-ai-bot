@@ -40,13 +40,13 @@ class SmartRouter:
             executor_registry: 执行器注册表
             default_provider: 默认 AI 提供商
             default_layer: 默认执行层（api 或 cli）
-            default_cli_provider: CLI层专用默认提供商（如果不设置则使用default_provider）
+            default_cli_provider: CLI层专用默认提供商（如果不设置则自动检测第一个可用的CLI）
             use_ai_intent_classification: 是否使用AI进行意图分类（推荐开启）
         """
         self.executor_registry = executor_registry
         self.default_provider = default_provider
         self.default_layer = default_layer
-        self.default_cli_provider = default_cli_provider or default_provider  # 如果未设置则使用default_provider
+        self.default_cli_provider = default_cli_provider  # 可能为None，稍后自动检测
         self.command_parser = CommandParser()
         self.use_ai_intent_classification = use_ai_intent_classification
         
@@ -56,7 +56,7 @@ class SmartRouter:
         logger.info(
             f"SmartRouter initialized with default provider={default_provider}, "
             f"default layer={default_layer}, "
-            f"default CLI provider={self.default_cli_provider}, "
+            f"default CLI provider={self.default_cli_provider or 'auto-detect'}, "
             f"ai_intent_classification={use_ai_intent_classification}"
         )
     
@@ -103,7 +103,19 @@ class SmartRouter:
         
         if needs_cli:
             layer = "cli"
-            provider = self.default_cli_provider  # 使用CLI专用默认提供商
+            # 如果未设置default_cli_provider，自动检测第一个可用的CLI
+            if self.default_cli_provider:
+                provider = self.default_cli_provider
+            else:
+                provider = self._get_first_available_cli_provider()
+                if not provider:
+                    # 没有可用的CLI执行器
+                    logger.error("[ROUTING] No CLI executor available")
+                    raise ExecutorNotAvailableError(
+                        "cli",
+                        "cli",
+                        "No CLI executor configured. Please install Claude Code CLI or Gemini CLI and configure TARGET_PROJECT_DIR."
+                    )
             logger.info(
                 f"[ROUTING] Intent classification: needs CLI layer, using provider={provider}"
             )
@@ -204,6 +216,28 @@ class SmartRouter:
             except ExecutorNotAvailableError:
                 continue
         
+        return None
+    
+    def _get_first_available_cli_provider(self) -> Optional[str]:
+        """获取第一个可用的CLI提供商
+        
+        当DEFAULT_CLI_PROVIDER未设置时，自动检测可用的CLI执行器
+        
+        Returns:
+            Optional[str]: 第一个可用的CLI提供商名称，如果没有可用的返回None
+        """
+        # 优先级：claude > gemini（Claude Code CLI更成熟）
+        preferred_cli_providers = ["claude", "gemini"]
+        
+        for provider in preferred_cli_providers:
+            try:
+                executor = self.executor_registry.get_executor(provider, "cli")
+                logger.info(f"[ROUTING] Auto-detected available CLI provider: {provider}")
+                return provider
+            except ExecutorNotAvailableError:
+                continue
+        
+        logger.warning("[ROUTING] No CLI executor available for auto-detection")
         return None
     
     def _fallback(self, provider: str, original_layer: str) -> AIExecutor:

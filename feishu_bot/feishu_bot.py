@@ -297,6 +297,10 @@ class FeishuBot:
                     sender_id
                 )
                 
+                # 获取执行器元数据
+                executor_metadata = executor.get_metadata()
+                executor_name = executor_metadata.name if executor_metadata else None
+                
                 # 执行 AI
                 if executor.get_provider_name().endswith("-api"):
                     # API 层：传递对话历史
@@ -314,11 +318,11 @@ class FeishuBot:
                 # 7. 响应格式化
                 if result.success:
                     response = self.response_formatter.format_response(
-                        message_content, result.stdout
+                        message_content, result.stdout, executor_name=executor_name
                     )
                 else:
                     response = self.response_formatter.format_error(
-                        message_content, result.error_message or result.stderr
+                        message_content, result.error_message or result.stderr, executor_name=executor_name
                     )
                 
                 # 8. 消息发送

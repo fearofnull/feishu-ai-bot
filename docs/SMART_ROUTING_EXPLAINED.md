@@ -261,7 +261,7 @@ DEFAULT_LAYER=api
 
 # CLI层专用默认提供商（可选）🆕
 # 当AI判断需要CLI层时，使用此提供商
-# 如果不设置，则使用DEFAULT_PROVIDER
+# 如果不设置，系统会自动检测第一个可用的CLI执行器
 DEFAULT_CLI_PROVIDER=gemini
 ```
 
@@ -287,6 +287,39 @@ DEFAULT_CLI_PROVIDER=gemini      # CLI层默认用Gemini
 提供商: gemini (DEFAULT_CLI_PROVIDER)
 结果: gemini/cli ✅
 ```
+
+**自动检测CLI提供商**（当未设置DEFAULT_CLI_PROVIDER时）：
+
+如果不设置 `DEFAULT_CLI_PROVIDER`，系统会自动检测第一个可用的CLI执行器：
+
+```bash
+# 不设置DEFAULT_CLI_PROVIDER
+DEFAULT_PROVIDER=openai
+# DEFAULT_CLI_PROVIDER 留空或不设置
+```
+
+**自动检测优先级**：
+1. Claude Code CLI（如果已配置）
+2. Gemini CLI（如果已配置）
+
+**示例**：
+```
+配置:
+  DEFAULT_PROVIDER=openai
+  DEFAULT_CLI_PROVIDER=未设置
+  已配置: openai/api, gemini/cli
+
+用户: "查看代码库结构"
+判断: 需要CLI → 使用CLI层
+自动检测: gemini/cli 可用 ✅
+结果: gemini/cli
+```
+
+**重要说明**：
+- ⚠️ API层和CLI层是**完全不同的工具**
+- ⚠️ `openai/api` 存在，但 `openai/cli` **不存在**（OpenAI没有CLI工具）
+- ⚠️ 不能简单地用 `DEFAULT_PROVIDER` 替代 `DEFAULT_CLI_PROVIDER`
+- ✅ 如果未设置 `DEFAULT_CLI_PROVIDER`，系统会自动检测可用的CLI执行器
 
 ## 降级策略（Fallback）
 
@@ -433,3 +466,71 @@ DEFAULT_CLI_PROVIDER=gemini      # CLI层默认用Gemini
 - ✅ 用户可以显式控制（前缀）
 - ✅ 系统智能判断（关键词检测）
 - ✅ 服务不可用时自动降级（容错机制）
+
+## 执行器名称显示 🆕
+
+为了让用户清楚地知道是哪个AI服务回答了问题，系统会在响应消息中显示执行器名称。
+
+### 显示格式
+
+**成功响应**：
+```
+【使用 OpenAI API 回答】
+
+我是AI助手，很高兴为您服务...
+```
+
+**错误响应**：
+```
+【使用 Claude Code CLI 回答】
+
+❌ 处理失败 / Error
+
+执行命令失败...
+```
+
+### 执行器名称列表
+
+- `OpenAI API` - OpenAI API服务
+- `Claude API` - Anthropic Claude API服务
+- `Gemini API` - Google Gemini API服务
+- `Claude Code CLI` - Claude Code CLI工具
+- `Gemini CLI` - Gemini CLI工具
+
+### 示例
+
+**场景1：API层回答**
+```
+用户: 你是谁
+响应: 【使用 OpenAI API 回答】
+
+我是AI助手...
+```
+
+**场景2：CLI层回答**
+```
+用户: 查看代码库结构
+响应: 【使用 Claude Code CLI 回答】
+
+项目结构如下：
+- src/
+  - main.py
+  - utils.py
+...
+```
+
+**场景3：降级后回答**
+```
+用户: @claude 你是谁
+配置: 只有OpenAI可用
+响应: 【使用 OpenAI API 回答】
+
+我是AI助手...
+```
+
+### 好处
+
+- ✅ 用户清楚知道是哪个AI服务回答的
+- ✅ 便于调试和问题排查
+- ✅ 了解降级策略是否生效
+- ✅ 验证路由决策是否正确
