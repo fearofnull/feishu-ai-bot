@@ -112,8 +112,8 @@ class GeminiCLIExecutor(AICLIExecutor):
         """
         args = [self.get_command_name()]
         
-        # 添加工作目录
-        args.extend(["--cwd", self.target_dir])
+        # Gemini CLI 不支持 --cwd 参数，需要通过 subprocess 的 cwd 参数设置工作目录
+        # 或者使用 --include-directories 参数
         
         # 如果启用原生会话管理，添加会话参数
         if self.use_native_session and additional_params:
@@ -121,10 +121,10 @@ class GeminiCLIExecutor(AICLIExecutor):
             if user_id:
                 session_id = self.get_or_create_gemini_session(user_id)
                 if session_id:
-                    args.extend(["--session", session_id])
+                    args.extend(["--resume", session_id])
         
-        # 添加用户提示
-        args.extend(["--prompt", user_prompt])
+        # 添加用户提示（使用 -p 简写）
+        args.extend(["-p", user_prompt])
         
         # 添加额外参数
         if additional_params:
@@ -173,10 +173,11 @@ class GeminiCLIExecutor(AICLIExecutor):
         logger.info(f"Executing Gemini CLI command: {' '.join(command_args[:3])}...")
         
         try:
-            # 执行命令
+            # 执行命令（在目标目录中执行）
             start_time = time.time()
             result = subprocess.run(
                 command_args,
+                cwd=self.target_dir,  # 在目标目录中执行
                 capture_output=True,
                 text=True,
                 encoding='utf-8',
