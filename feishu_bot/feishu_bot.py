@@ -298,7 +298,14 @@ class FeishuBot:
                 )
                 
                 # 获取执行器元数据
-                executor_metadata = executor.get_metadata()
+                provider = executor.get_provider_name().replace("-api", "").replace("-cli", "")
+                # 判断layer
+                if executor.get_provider_name().endswith("-api"):
+                    layer = "api"
+                else:
+                    layer = "cli"
+                
+                executor_metadata = self.executor_registry.get_executor_metadata(provider, layer)
                 executor_name = executor_metadata.name if executor_metadata else None
                 
                 # 执行 AI
