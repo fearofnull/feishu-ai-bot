@@ -32,6 +32,7 @@ class SessionManager:
     NEW_SESSION_COMMANDS = ["/new", "新会话"]
     SESSION_INFO_COMMANDS = ["/session", "会话信息"]
     HISTORY_COMMANDS = ["/history", "历史记录"]
+    HELP_COMMANDS = ["/help", "帮助", "help"]
     
     def __init__(
         self,
@@ -400,7 +401,8 @@ class SessionManager:
         return (
             message_lower in [cmd.lower() for cmd in self.NEW_SESSION_COMMANDS] or
             message_lower in [cmd.lower() for cmd in self.SESSION_INFO_COMMANDS] or
-            message_lower in [cmd.lower() for cmd in self.HISTORY_COMMANDS]
+            message_lower in [cmd.lower() for cmd in self.HISTORY_COMMANDS] or
+            message_lower in [cmd.lower() for cmd in self.HELP_COMMANDS]
         )
     
     def handle_session_command(self, user_id: str, message: str) -> Optional[str]:
@@ -414,6 +416,10 @@ class SessionManager:
             命令响应消息，如果不是会话命令则返回 None
         """
         message_lower = message.strip().lower()
+        
+        # 帮助命令
+        if message_lower in [cmd.lower() for cmd in self.HELP_COMMANDS]:
+            return self._get_help_message()
         
         # 新会话命令
         if message_lower in [cmd.lower() for cmd in self.NEW_SESSION_COMMANDS]:
@@ -448,3 +454,44 @@ class SessionManager:
             return "\n".join(lines)
         
         return None
+    
+    def _get_help_message(self) -> str:
+        """获取帮助信息
+        
+        Returns:
+            包含所有可用命令的帮助文本
+        """
+        help_text = """📖 飞书AI机器人使用帮助 / Help
+
+🤖 **AI提供商命令 / AI Provider Commands**
+
+API层（快速响应）/ API Layer (Fast Response):
+  @claude 或 @claude-api - 使用 Claude API
+  @gemini 或 @gemini-api - 使用 Gemini API  
+  @openai 或 @gpt - 使用 OpenAI API
+
+CLI层（代码能力）/ CLI Layer (Code Capabilities):
+  @code 或 @claude-cli - 使用 Claude Code CLI
+  @gemini-cli - 使用 Gemini CLI
+
+💡 **智能路由 / Smart Routing**
+  不使用前缀时，系统会自动选择最合适的AI服务
+  When no prefix is used, the system automatically selects the best AI service
+
+📝 **会话管理命令 / Session Management Commands**
+  /new 或 新会话 - 创建新会话，清除历史记录
+  /session 或 会话信息 - 查看当前会话信息
+  /history 或 历史记录 - 查看对话历史
+  /help 或 帮助 - 显示此帮助信息
+
+💬 **使用示例 / Examples**
+  @claude 什么是人工智能？
+  @code 查看项目结构
+  什么是Python？（自动路由）
+  /new（开启新会话）
+
+📚 **更多信息 / More Info**
+  详细文档请访问项目README
+  For detailed documentation, visit the project README
+"""
+        return help_text
