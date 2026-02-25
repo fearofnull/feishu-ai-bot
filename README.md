@@ -97,10 +97,11 @@
 - 代码生成（不需要查看现有代码）
 - 翻译、写作等不需要访问代码库的任务
 
-**降级策略**：
-- 如果指定的执行器不可用，系统会自动尝试降级到另一层
-- API层不可用 → 降级到CLI层
-- CLI层不可用 → 降级到API层
+**降级策略**（自动容错）：
+- 当指定的AI服务不可用时（如API密钥未配置），系统会自动降级到其他可用服务
+- 降级顺序：同provider另一层 → 其他provider同一层 → 其他provider另一层
+- 示例：claude/api不可用 → 尝试claude/cli → 尝试openai/api → 尝试gemini/api
+- 详细说明见：[智能路由详解 - 降级策略](docs/SMART_ROUTING_EXPLAINED.md#降级策略fallback)
 
 ### AI API层 vs AI CLI层
 
