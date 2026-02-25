@@ -229,7 +229,17 @@ cp .env.example .env    # Linux/Mac
 
 **默认设置**（可选）：
 - `DEFAULT_PROVIDER`: 默认AI提供商（可选值：`claude`、`gemini`、`openai`，默认：`claude`）
+  - 主要用于API层的默认提供商
 - `DEFAULT_LAYER`: 默认执行层（可选值：`api`、`cli`，默认：`api`）
+- `DEFAULT_CLI_PROVIDER`: CLI层专用默认提供商（可选，默认使用`DEFAULT_PROVIDER`）
+  - 当AI判断需要CLI层时，使用此提供商
+  - 适用场景：API层和CLI层想使用不同的提供商
+  - 示例：`DEFAULT_PROVIDER=openai`（API层用OpenAI），`DEFAULT_CLI_PROVIDER=gemini`（CLI层用Gemini）
+
+**智能路由配置**（可选）：
+- `USE_AI_INTENT_CLASSIFICATION`: 是否使用AI进行意图分类（可选值：`true`、`false`，默认：`true`）
+  - 启用后使用AI判断用户意图，比关键词检测更准确
+  - 详细说明见 [AI意图分类文档](docs/AI_INTENT_CLASSIFICATION.md)
 
 详细配置说明见 [配置文档](docs/CONFIGURATION.md) 或 `.env.example` 文件。
 

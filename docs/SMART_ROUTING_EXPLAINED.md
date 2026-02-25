@@ -253,10 +253,39 @@ USE_AI_INTENT_CLASSIFICATION=true
 
 ```bash
 # 默认AI提供商（claude, gemini, openai）
+# 主要用于API层
 DEFAULT_PROVIDER=claude
 
 # 默认执行层（api, cli）
 DEFAULT_LAYER=api
+
+# CLI层专用默认提供商（可选）🆕
+# 当AI判断需要CLI层时，使用此提供商
+# 如果不设置，则使用DEFAULT_PROVIDER
+DEFAULT_CLI_PROVIDER=gemini
+```
+
+**使用场景**：
+- API层和CLI层想使用不同的提供商
+- 例如：API层用OpenAI（快速便宜），CLI层用Gemini（代码能力强）
+
+**示例配置**：
+```bash
+DEFAULT_PROVIDER=openai          # API层默认用OpenAI
+DEFAULT_CLI_PROVIDER=gemini      # CLI层默认用Gemini
+```
+
+**路由示例**：
+```
+用户: "你是谁"
+判断: 不需要CLI → 使用API层
+提供商: openai (DEFAULT_PROVIDER)
+结果: openai/api ✅
+
+用户: "查看代码库结构"
+判断: 需要CLI → 使用CLI层
+提供商: gemini (DEFAULT_CLI_PROVIDER)
+结果: gemini/cli ✅
 ```
 
 ## 降级策略（Fallback）

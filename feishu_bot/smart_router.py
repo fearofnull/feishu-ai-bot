@@ -31,6 +31,7 @@ class SmartRouter:
         executor_registry: ExecutorRegistry,
         default_provider: str = "claude",
         default_layer: str = "api",
+        default_cli_provider: Optional[str] = None,
         use_ai_intent_classification: bool = True
     ):
         """初始化智能路由器
@@ -39,11 +40,13 @@ class SmartRouter:
             executor_registry: 执行器注册表
             default_provider: 默认 AI 提供商
             default_layer: 默认执行层（api 或 cli）
+            default_cli_provider: CLI层专用默认提供商（如果不设置则使用default_provider）
             use_ai_intent_classification: 是否使用AI进行意图分类（推荐开启）
         """
         self.executor_registry = executor_registry
         self.default_provider = default_provider
         self.default_layer = default_layer
+        self.default_cli_provider = default_cli_provider or default_provider  # 如果未设置则使用default_provider
         self.command_parser = CommandParser()
         self.use_ai_intent_classification = use_ai_intent_classification
         
@@ -53,6 +56,7 @@ class SmartRouter:
         logger.info(
             f"SmartRouter initialized with default provider={default_provider}, "
             f"default layer={default_layer}, "
+            f"default CLI provider={self.default_cli_provider}, "
             f"ai_intent_classification={use_ai_intent_classification}"
         )
     
@@ -99,19 +103,21 @@ class SmartRouter:
         
         if needs_cli:
             layer = "cli"
+            provider = self.default_cli_provider  # 使用CLI专用默认提供商
             logger.info(
-                f"[ROUTING] Intent classification: needs CLI layer"
+                f"[ROUTING] Intent classification: needs CLI layer, using provider={provider}"
             )
             logger.debug(f"[ROUTING] Message: '{message_preview}'")
         else:
             layer = self.default_layer
+            provider = self.default_provider  # 使用通用默认提供商
             logger.info(
-                f"[ROUTING] Intent classification: using default layer: {layer}"
+                f"[ROUTING] Intent classification: using default layer: {layer}, provider={provider}"
             )
             logger.debug(f"[ROUTING] Message: '{message_preview}'")
         
         # 使用默认提供商（如果没有显式指定）
-        provider = self.default_provider
+        # provider 变量已在上面的 needs_cli 判断中设置
         
         # 获取执行器，如果不可用则降级
         try:

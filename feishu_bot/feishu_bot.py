@@ -71,6 +71,7 @@ class FeishuBot:
             executor_registry=self.executor_registry,
             default_provider=config.default_provider,
             default_layer=config.default_layer,
+            default_cli_provider=config.default_cli_provider,
             use_ai_intent_classification=config.use_ai_intent_classification
         )
         

@@ -43,6 +43,7 @@ class BotConfig:
     # 默认设置
     default_provider: str = "claude"
     default_layer: str = "api"
+    default_cli_provider: Optional[str] = None  # CLI层专用默认提供商（如果不设置则使用default_provider）
     
     # 智能路由配置
     use_ai_intent_classification: bool = True  # 是否使用AI进行意图分类
@@ -104,6 +105,7 @@ class BotConfig:
             # 默认设置
             default_provider=os.getenv("DEFAULT_PROVIDER", "claude"),
             default_layer=os.getenv("DEFAULT_LAYER", "api"),
+            default_cli_provider=os.getenv("DEFAULT_CLI_PROVIDER"),  # 如果不设置则使用default_provider
             
             # 智能路由配置
             use_ai_intent_classification=os.getenv("USE_AI_INTENT_CLASSIFICATION", "true").lower() in ("true", "1", "yes"),
