@@ -214,6 +214,8 @@ class BotConfig:
     def prepend_language_instruction(self, message: str) -> str:
         """在消息前添加语言指令
         
+        对于 CLI 执行器，使用单行格式以确保兼容性
+        
         Args:
             message: 原始消息
             
@@ -222,7 +224,8 @@ class BotConfig:
         """
         instruction = self.get_language_instruction()
         if instruction:
-            return f"{instruction}\n\n{message}"
+            # 使用单行格式，避免 CLI headless 模式的多行问题
+            return f"{instruction} {message}"
         return message
     
     def print_status(self) -> None:
