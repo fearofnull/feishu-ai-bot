@@ -159,6 +159,86 @@
 
 详细架构设计见项目文档
 
+### 动态配置系统
+
+系统支持在对话窗口中动态配置机器人行为，无需修改环境变量或重启服务。
+
+#### 配置优先级
+
+配置系统采用四层优先级结构（从高到低）：
+
+1. **临时参数** - 单次使用，通过 `--key=value` 格式传递
+2. **会话配置** - 持久化配置，基于会话 ID
+3. **全局配置** - 环境变量配置
+4. **默认值** - 系统默认值
+
+#### 会话类型
+
+- **私聊**：配置基于 `user_id`（用户级别），每个用户有独立的配置
+- **群聊**：配置基于 `chat_id`（群组级别），群组内所有成员共享配置，任何成员都可以修改
+
+#### 配置命令
+
+| 命令 | 说明 | 示例 |
+|------|------|------|
+| `/setdir <path>` | 设置 CLI 工具的目标项目目录 | `/setdir /home/user/my-project` |
+| `/lang <code>` | 设置 AI 回复语言（zh-CN, en-US 等） | `/lang zh-CN` |
+| `/provider <name>` | 设置默认 AI 提供商（claude, gemini, openai） | `/provider claude` |
+| `/layer <type>` | 设置默认执行层（api, cli） | `/layer api` |
+| `/cliprovider <name>` | 设置 CLI 层专用提供商 | `/cliprovider gemini` |
+| `/config` 或 `配置` | 查看当前配置 | `/config` |
+| `/reset` 或 `重置配置` | 重置所有配置 | `/reset` |
+
+#### 临时参数
+
+临时参数允许在单次请求中覆盖配置，不会持久化保存：
+
+```
+--dir=/tmp/test 查看项目结构
+--lang=en-US What is AI?
+--provider=gemini --layer=api 解释量子计算
+```
+
+#### 使用示例
+
+**私聊中设置个人偏好**：
+```
+用户: /lang zh-CN
+机器人: ✅ 配置已更新 / Config updated: response_language = zh-CN
+
+用户: /setdir /home/user/my-project
+机器人: ✅ 配置已更新 / Config updated: target_project_dir = /home/user/my-project
+
+用户: 查看项目结构
+机器人: [使用 zh-CN 语言，在 /home/user/my-project 目录下执行]
+```
+
+**群聊中共享配置**：
+```
+用户A: /setdir /team/shared-project
+机器人: ✅ 配置已更新 / Config updated: target_project_dir = /team/shared-project
+
+用户B: 查看代码
+机器人: [使用群组配置的 /team/shared-project 目录]
+```
+
+**临时参数覆盖**：
+```
+用户: --dir=/tmp/test --lang=en-US Analyze the code
+机器人: [临时使用 /tmp/test 目录和英文回复，不影响持久化配置]
+```
+
+详细配置文档见 [动态配置系统](docs/DYNAMIC_CONFIG.md)。
+
+#### 测试验证 / Test Verification
+
+动态配置系统已通过完整的测试验证：
+- ✅ 16 个单元测试（100% 通过率）
+- ✅ 15 个手动测试（100% 通过）
+- ✅ 配置优先级、持久化、验证等核心功能全部验证
+
+详细测试结果见 [动态配置系统文档](docs/DYNAMIC_CONFIG.md#测试验证) 和 [实现总结](IMPLEMENTATION_SUMMARY.md#测试覆盖)。
+
 ## 快速开始
 
 有两种部署方式可选：

@@ -17,6 +17,19 @@
   - 会话管理配置
   - 高级配置选项
 
+- **[DYNAMIC_CONFIG.md](DYNAMIC_CONFIG.md)** - 动态配置系统
+  - 在对话窗口中配置机器人
+  - 配置优先级说明
+  - 私聊和群聊配置
+  - 临时参数使用
+  - ✅ 已通过 16 个单元测试和 15 个手动测试验证
+
+- **[examples/DYNAMIC_CONFIG_EXAMPLES.md](examples/DYNAMIC_CONFIG_EXAMPLES.md)** - 动态配置使用示例
+  - 8 个实际使用场景
+  - 最佳实践
+  - 故障排除案例
+  - ✅ 所有示例场景已验证
+
 - **[LANGUAGE_CONFIGURATION.md](LANGUAGE_CONFIGURATION.md)** - 语言配置说明
   - 如何设置AI回复语言
   - 支持的语言列表
@@ -49,12 +62,16 @@
 2. **[CONFIGURATION.md](CONFIGURATION.md)** - 配置机器人
    - 设置环境变量
    - 配置AI服务
+
+3. **[DYNAMIC_CONFIG.md](DYNAMIC_CONFIG.md)** - 动态配置
+   - 学习如何在对话中配置机器人
+   - 了解配置优先级
    
-3. **[deployment/QUICKSTART.md](deployment/QUICKSTART.md)** - 快速部署
+4. **[deployment/QUICKSTART.md](deployment/QUICKSTART.md)** - 快速部署
    - 5分钟部署到云端
    - 验证配置是否正确
    
-4. **[USER_GUIDE.md](USER_GUIDE.md)** - 开始使用
+5. **[USER_GUIDE.md](USER_GUIDE.md)** - 开始使用
    - 学习如何使用机器人
    - 了解各种命令和功能
 
