@@ -6,6 +6,7 @@
 
 - [Docker 部署（推荐）](#docker-部署推荐)
 - [直接部署](#直接部署)
+- [Gunicorn 生产部署](#gunicorn-生产部署)
 - [云服务商部署](#云服务商部署)
 - [常见问题](#常见问题)
 
@@ -256,6 +257,86 @@ sudo systemctl status feishu-bot
 sudo journalctl -u feishu-bot -f
 ```
 
+## Gunicorn 生产部署
+
+对于 Web 管理界面，推荐使用 Gunicorn 作为生产级 WSGI 服务器。Gunicorn 提供更好的性能、稳定性和生产级特性。
+
+### 快速开始
+
+```bash
+# 安装 Gunicorn（如果还未安装）
+pip install gunicorn
+
+# 使用配置文件启动
+gunicorn -c gunicorn.conf.py wsgi:app
+
+# 或使用启动脚本
+./scripts/start_web_admin.sh production
+```
+
+### 配置说明
+
+项目根目录下的 `gunicorn.conf.py` 提供了生产就绪的配置：
+
+- **Worker 配置**：自动根据 CPU 核心数计算最优 worker 数量
+- **超时设置**：120 秒请求超时，30 秒优雅关闭超时
+- **日志配置**：访问日志和错误日志分离，支持自定义格式
+- **性能优化**：预加载应用、worker 自动重启、keep-alive 连接
+- **安全设置**：请求大小限制、代理 IP 信任配置
+
+### 环境变量
+
+通过环境变量自定义配置：
+
+```bash
+# .env 文件
+WEB_ADMIN_HOST=0.0.0.0
+WEB_ADMIN_PORT=5000
+WEB_ADMIN_WORKERS=5  # 默认为 (CPU核心数 * 2) + 1
+WEB_ADMIN_LOG_LEVEL=info
+WEB_ADMIN_PASSWORD=your_secure_password
+JWT_SECRET_KEY=your_random_secret_key
+```
+
+### Systemd 服务
+
+使用 Systemd 管理 Gunicorn 服务：
+
+```bash
+# 复制服务文件
+sudo cp deployment/feishu-bot-web-admin.service /etc/systemd/system/
+
+# 根据实际路径修改服务文件
+sudo nano /etc/systemd/system/feishu-bot-web-admin.service
+
+# 启动服务
+sudo systemctl daemon-reload
+sudo systemctl start feishu-bot-web-admin
+sudo systemctl enable feishu-bot-web-admin
+
+# 查看状态
+sudo systemctl status feishu-bot-web-admin
+```
+
+### Nginx 反向代理
+
+推荐使用 Nginx 作为反向代理，提供 HTTPS、负载均衡等功能。配置示例请参考 [Gunicorn 部署指南](GUNICORN_DEPLOYMENT.md#nginx-反向代理)。
+
+### 详细文档
+
+完整的 Gunicorn 配置、优化、监控和故障排除指南，请参考：
+
+📖 **[Gunicorn 生产部署指南](GUNICORN_DEPLOYMENT.md)**
+
+该文档包含：
+- 详细的配置说明
+- Systemd 服务配置
+- Nginx 反向代理配置
+- SSL/HTTPS 配置
+- 性能优化建议
+- 监控和日志分析
+- 故障排除指南
+
 ## 云服务商部署
 
 ### 阿里云 ECS
@@ -372,25 +453,71 @@ netstat -tuln
 
 ## 安全建议
 
-### 1. 保护敏感信息
+### 1. 文件权限设置
+
+为了增强安全性，建议在生产环境中设置正确的文件权限：
+
+**自动设置（推荐）**：
+
+```bash
+# 使用提供的脚本自动设置所有文件权限
+python scripts/set_file_permissions.py
+```
+
+该脚本会：
+- 将配置文件（.env、session_configs.json、备份文件）权限设置为 600（仅所有者可读写）
+- 将日志文件权限设置为 640（所有者可读写，组可读）
+
+**手动设置**：
+
+```bash
+# 设置配置文件权限为 600
+chmod 600 .env
+chmod 600 data/session_configs.json
+chmod 600 data/session_configs.json.backup*
+
+# 设置日志文件权限为 640
+chmod 640 logs/*.log*
+
+# 设置目录权限
+chmod 755 data
+chmod 755 logs
+```
+
+**验证权限**：
+
+```bash
+# 查看配置文件权限
+ls -l .env data/session_configs.json*
+
+# 查看日志文件权限
+ls -l logs/*.log*
+```
+
+**注意**：
+- 在 Windows 系统上，Unix 风格的文件权限可能不会完全生效
+- 建议在 Linux/Unix 系统上运行权限设置脚本
+- 权限设置应该在部署后立即执行
+
+### 2. 保护敏感信息
 
 - ✅ 不要将 `.env` 文件提交到 Git
 - ✅ 使用环境变量或密钥管理服务存储凭证
 - ✅ 定期轮换 API 密钥
 
-### 2. 网络安全
+### 3. 网络安全
 
 - ✅ 配置防火墙，只开放必要的端口
 - ✅ 使用 HTTPS（如果需要 webhook）
 - ✅ 限制容器的网络访问
 
-### 3. 更新和备份
+### 4. 更新和备份
 
 - ✅ 定期更新系统和依赖
 - ✅ 定期备份会话数据（`./data` 目录）
 - ✅ 监控日志，及时发现异常
 
-### 4. 资源限制
+### 5. 资源限制
 
 - ✅ 配置容器资源限制，防止资源耗尽
 - ✅ 设置日志轮转，防止磁盘占满

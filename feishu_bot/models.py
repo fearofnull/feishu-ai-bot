@@ -90,3 +90,21 @@ class MessageReceiveEvent:
     parent_id: Optional[str]  # 引用消息的 ID
     sender_id: str
     create_time: int
+
+
+
+@dataclass
+class SessionConfig:
+    """会话配置"""
+    session_id: str  # chat_id 或 user_id
+    session_type: str  # "user" 或 "group"
+    target_project_dir: Optional[str]
+    response_language: Optional[str]
+    default_provider: Optional[str]
+    default_layer: Optional[str]
+    default_cli_provider: Optional[str]
+    created_by: Optional[str]  # 创建者 user_id
+    created_at: str  # ISO 格式时间戳
+    updated_by: Optional[str]  # 最后更新者 user_id
+    updated_at: str  # ISO 格式时间戳
+    update_count: int  # 更新次数

@@ -26,3 +26,14 @@ hypothesis>=6.82.0
 anthropic>=0.39.0  # Claude API
 google-generativeai>=0.8.0  # Gemini API
 openai>=1.0.0  # OpenAI API
+
+# Web Admin Interface
+Flask>=3.0.0
+Flask-CORS>=4.0.0
+Flask-HTTPAuth>=4.8.0
+Flask-Limiter>=3.5.0  # Rate limiting
+PyJWT>=2.8.0
+gunicorn>=21.2.0  # Production WSGI server
+
+# Performance optimizations (optional but recommended)
+orjson>=3.9.0  # Fast JSON serialization (2-3x faster than standard json)

@@ -1,0 +1,290 @@
+# Nginx Configuration for Feishu Bot Web Admin Interface
+# ========================================================
+#
+# This is an example Nginx configuration for deploying the Web Admin Interface
+# in a production environment. It includes:
+# - Reverse proxy to Gunicorn backend
+# - Static file serving for frontend assets
+# - HTTPS configuration with SSL/TLS
+# - Security headers and best practices
+# - Gzip compression
+# - Caching policies
+#
+# Installation:
+# 1. Copy this file to /etc/nginx/sites-available/feishu-bot-web-admin
+# 2. Modify the configuration according to your environment
+# 3. Create a symbolic link: sudo ln -s /etc/nginx/sites-available/feishu-bot-web-admin /etc/nginx/sites-enabled/
+# 4. Test configuration: sudo nginx -t
+# 5. Reload Nginx: sudo systemctl reload nginx
+
+# Upstream backend server (Gunicorn)
+upstream feishu_bot_backend {
+    # Use Unix socket for better performance (recommended)
+    # server unix:/opt/feishu-bot/gunicorn.sock fail_timeout=0;
+    
+    # Or use TCP socket
+    server 127.0.0.1:5000 fail_timeout=0;
+    
+    # For multiple workers, you can add more servers for load balancing
+    # server 127.0.0.1:5001 fail_timeout=0;
+    # server 127.0.0.1:5002 fail_timeout=0;
+    
+    # Keep-alive connections to backend
+    keepalive 32;
+}
+
+# HTTP server - Redirect all HTTP traffic to HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    server_name your-domain.com www.your-domain.com;
+    
+    # Allow Let's Encrypt ACME challenge
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    
+    # Redirect all other HTTP requests to HTTPS
+    location / {
+        return 301 https://$server_name$request_uri;
+    }
+}
+
+# HTTPS server - Main configuration
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name your-domain.com www.your-domain.com;
+    
+    # Root directory for static files
+    root /opt/feishu-bot/frontend/dist;
+    
+    # Logging
+    access_log /var/log/nginx/feishu-bot-web-admin-access.log;
+    error_log /var/log/nginx/feishu-bot-web-admin-error.log warn;
+    
+    # ============================================
+    # SSL/TLS Configuration
+    # ============================================
+    
+    # SSL certificate files (Let's Encrypt example)
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    
+    # SSL protocols and ciphers (Mozilla Intermediate configuration)
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384';
+    ssl_prefer_server_ciphers off;
+    
+    # SSL session cache and timeout
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_session_tickets off;
+    
+    # OCSP stapling
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    ssl_trusted_certificate /etc/letsencrypt/live/your-domain.com/chain.pem;
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+    
+    # ============================================
+    # Security Headers
+    # ============================================
+    
+    # HSTS (HTTP Strict Transport Security)
+    # Tells browsers to always use HTTPS for this domain
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    
+    # Prevent clickjacking attacks
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    
+    # Prevent MIME type sniffing
+    add_header X-Content-Type-Options "nosniff" always;
+    
+    # Enable XSS protection
+    add_header X-XSS-Protection "1; mode=block" always;
+    
+    # Content Security Policy (adjust according to your needs)
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self';" always;
+    
+    # Referrer Policy
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    
+    # Permissions Policy (formerly Feature Policy)
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+    
+    # ============================================
+    # Gzip Compression
+    # ============================================
+    
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
+    gzip_disable "msie6";
+    
+    # ============================================
+    # Client Settings
+    # ============================================
+    
+    # Maximum upload size (for config import)
+    client_max_body_size 10M;
+    
+    # Client body buffer size
+    client_body_buffer_size 128k;
+    
+    # Client header buffer size
+    client_header_buffer_size 1k;
+    large_client_header_buffers 4 16k;
+    
+    # Timeouts
+    client_body_timeout 12;
+    client_header_timeout 12;
+    keepalive_timeout 65;
+    send_timeout 10;
+    
+    # ============================================
+    # API Proxy Configuration
+    # ============================================
+    
+    # Proxy API requests to Gunicorn backend
+    location /api/ {
+        # Proxy headers
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $server_name;
+        
+        # Proxy timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # Disable buffering for real-time responses
+        proxy_buffering off;
+        proxy_request_buffering off;
+        
+        # HTTP version and connection
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        
+        # Pass to backend
+        proxy_pass http://feishu_bot_backend;
+        
+        # Redirect handling
+        proxy_redirect off;
+        
+        # Do not cache API responses
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+        expires off;
+    }
+    
+    # ============================================
+    # Static File Serving
+    # ============================================
+    
+    # Serve static files with caching
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+        
+        # Try to serve the file, fallback to index.html for SPA routing
+        try_files $uri $uri/ /index.html;
+    }
+    
+    # Serve index.html with no caching (for SPA updates)
+    location = /index.html {
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+        expires off;
+        try_files $uri =404;
+    }
+    
+    # Serve favicon
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # Serve robots.txt
+    location = /robots.txt {
+        log_not_found off;
+        access_log off;
+    }
+    
+    # ============================================
+    # SPA Routing (Vue Router)
+    # ============================================
+    
+    # For all other requests, serve index.html (SPA routing)
+    location / {
+        try_files $uri $uri/ /index.html;
+        
+        # No caching for HTML files
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+        expires off;
+    }
+    
+    # ============================================
+    # Security: Deny Access to Hidden Files
+    # ============================================
+    
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+    
+    # ============================================
+    # Health Check Endpoint (Optional)
+    # ============================================
+    
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+}
+
+# ============================================
+# Additional Configuration for IP Restriction (Optional)
+# ============================================
+#
+# If you want to restrict access to specific IP addresses, uncomment and configure:
+#
+# geo $allowed_ip {
+#     default 0;
+#     192.168.1.0/24 1;  # Allow local network
+#     203.0.113.0/24 1;  # Allow office network
+# }
+#
+# Then add this to the server block:
+# if ($allowed_ip = 0) {
+#     return 403;
+# }
+
+# ============================================
+# Rate Limiting Configuration (Optional)
+# ============================================
+#
+# Add this outside the server block to enable rate limiting:
+#
+# # Define rate limit zones
+# limit_req_zone $binary_remote_addr zone=login_limit:10m rate=5r/m;
+# limit_req_zone $binary_remote_addr zone=api_limit:10m rate=60r/m;
+#
+# Then add to specific locations:
+# location /api/auth/login {
+#     limit_req zone=login_limit burst=3 nodelay;
+#     # ... rest of proxy configuration
+# }
+#
+# location /api/ {
+#     limit_req zone=api_limit burst=10 nodelay;
+#     # ... rest of proxy configuration
+# }

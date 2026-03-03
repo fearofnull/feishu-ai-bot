@@ -105,7 +105,7 @@
 
 ### 会话管理
 
-系统采用双层会话管理架构：
+系统采用三层会话管理架构，充分利用CLI工具的原生会话能力：
 
 #### 1. 飞书机器人会话层
 
@@ -113,33 +113,68 @@
 - 管理用户与机器人的交互历史
 - 提供会话信息查询和历史记录查看
 - 支持会话轮换和过期管理
+- 会话归档到 `data/archived_sessions/` 目录
 
 **会话命令**：
 - `/help` 或 `帮助`：查看所有可用命令和使用说明
 - `/session` 或 `会话信息`：查看当前会话ID、消息数、创建时间
 - `/history` 或 `历史记录`：查看对话历史
-- `/new` 或 `新会话`：开启新会话（清除历史）
+- `/new` 或 `新会话`：开启新会话（清除所有三层会话）
 
 **自动管理**：
 - 单个会话最大消息数：50条（可配置）
 - 会话超时时间：24小时（可配置）
-- 超过限制后自动创建新会话
+- 超过限制后自动创建新会话并归档旧会话
 
-#### 2. AI CLI原生会话层
+#### 2. Claude Code CLI 会话层
 
 **功能**：
-- 利用AI CLI工具的原生会话管理能力
-- 让AI自己维护上下文，无需手动传递历史
-- 提高效率和上下文理解质量
+- 利用 Claude Code CLI 的原生会话管理（`--session` 参数）
+- 会话存储在 `~/.claude/sessions/` 目录
+- 系统维护 user_id → claude_session_id 映射
+- 会话映射持久化到 `data/executor_sessions.json`
 
-**支持的CLI**：
-- Claude Code CLI：使用`--session`参数
-- Gemini CLI：使用`--session`参数
+**工作流程**：
+1. 首次调用：不传 `--session` 参数，Claude Code 自动创建新会话
+2. 后续调用：传递 `--session <session_id>`，恢复上下文
+3. `/new` 命令：清除映射，下次调用创建新会话
 
-**会话映射**：
-- 系统为每个飞书用户维护一个AI CLI会话ID
-- 会话映射持久化存储，重启后自动恢复
-- 使用`/new`命令时同时清除两层会话
+#### 3. Gemini CLI 会话层
+
+**功能**：
+- 利用 Gemini CLI 的原生会话管理（`--resume` 参数）
+- 会话存储在 `~/.gemini/sessions/` 目录
+- 系统维护 user_id → gemini_session_id 映射
+- 会话映射持久化到 `data/executor_sessions.json`
+
+**工作流程**：
+1. 首次调用：不传 `--resume` 参数，Gemini CLI 自动创建新会话
+2. 后续调用：传递 `--resume <session_id>`，恢复上下文
+3. `/new` 命令：清除映射，下次调用创建新会话
+
+#### `/new` 命令完整流程
+
+当用户发送 `/new` 命令时，系统会执行以下操作：
+
+1. **归档旧会话**：
+   - 将当前会话保存到 `data/archived_sessions/{user_id}_{session_id}_{timestamp}.json`
+   - 包含完整的消息历史和元数据
+
+2. **创建新的飞书机器人会话**：
+   - 生成新的 session_id (UUID)
+   - 清空消息历史
+   - 重置会话时间戳
+
+3. **清除 Claude CLI 会话映射**：
+   - 从 `data/executor_sessions.json` 中删除 user_id 映射
+   - 下次调用时不传 `--session` 参数，让 Claude Code 创建新会话
+
+4. **清除 Gemini CLI 会话映射**：
+   - 从 `data/executor_sessions.json` 中删除 user_id 映射
+   - 下次调用时不传 `--resume` 参数，让 Gemini CLI 创建新会话
+
+5. **返回确认消息**：
+   - "✅ 已创建新会话 / New session created"
 
 #### 会话管理架构说明
 
@@ -151,11 +186,20 @@
 - 对于CLI层（Claude Code CLI、Gemini CLI），系统使用AI工具的原生会话管理
 - 飞书机器人会话仅用于显示历史记录和会话信息
 - AI CLI会话用于实际的AI上下文管理，由AI工具自动维护
+- 会话映射存储在 `data/executor_sessions.json`，支持重启后恢复
 
 **优势**：
 - 对于API层：完全控制对话历史，灵活管理上下文
-- 对于CLI层：利用AI原生能力，获得更好的上下文理解
+- 对于CLI层：利用AI原生能力，获得更好的上下文理解和代码操作连续性
 - 统一的会话管理接口，用户体验一致
+- `/new` 命令同步清理所有三层会话，确保完全重置
+
+**会话存储位置**：
+- 飞书机器人活跃会话：`data/sessions.json`
+- 飞书机器人归档会话：`data/archived_sessions/`
+- CLI 会话映射：`data/executor_sessions.json`
+- Claude Code 会话：`~/.claude/sessions/`（由 Claude Code 管理）
+- Gemini CLI 会话：`~/.gemini/sessions/`（由 Gemini CLI 管理）
 
 详细架构设计见项目文档
 
@@ -238,6 +282,84 @@
 - ✅ 配置优先级、持久化、验证等核心功能全部验证
 
 详细测试结果见 [动态配置系统文档](docs/DYNAMIC_CONFIG.md#测试验证) 和 [实现总结](IMPLEMENTATION_SUMMARY.md#测试覆盖)。
+
+### Web 管理界面
+
+除了在飞书对话窗口中使用命令配置，系统还提供了一个美观、易用的 Web 管理界面，用于可视化管理所有会话的配置。
+
+#### 功能特性
+
+- 🎨 **现代化界面**: 基于 Vue.js 3 + Element Plus 的响应式单页应用
+- 🔐 **安全认证**: 基于 JWT 令牌的身份验证系统
+- 🛡️ **速率限制**: 防止暴力破解和 API 滥用
+- 📋 **配置管理**: 查看、编辑、重置会话配置，支持批量操作
+- 🔍 **智能搜索**: 支持按会话类型筛选和会话 ID 搜索
+- 📊 **配置详情**: 查看配置元数据、历史记录和有效配置
+- 💾 **导出导入**: 支持配置数据的备份和迁移
+- 🌐 **全局配置**: 查看系统默认配置
+- 📱 **响应式设计**: 适配桌面、平板和移动设备
+
+#### 快速启动
+
+1. **配置环境变量**（在 `.env` 文件中添加）：
+```bash
+# Web 管理界面管理员密码（必需）
+WEB_ADMIN_PASSWORD=your_secure_password
+
+# JWT 令牌签名密钥（必需）
+JWT_SECRET_KEY=your_random_secret_key
+```
+
+2. **启动服务**：
+```bash
+# 生产模式（推荐）
+python -m feishu_bot.web_admin.server
+
+# 或指定端口
+python -m feishu_bot.web_admin.server --port 8080
+```
+
+3. **访问界面**：
+打开浏览器访问 http://localhost:5000
+
+#### 环境变量配置
+
+**必需配置**：
+- `WEB_ADMIN_PASSWORD`: 管理员登录密码（建议使用强密码）
+- `JWT_SECRET_KEY`: JWT 令牌签名密钥（使用随机生成的长字符串）
+
+**可选配置**：
+- `WEB_ADMIN_HOST`: 监听地址（默认：`0.0.0.0`）
+- `WEB_ADMIN_PORT`: 监听端口（默认：`5000`）
+- `JWT_EXPIRATION`: 令牌有效期（默认：`7200` 秒，2 小时）
+- `FLASK_ENV`: Flask 运行环境（`development` 或 `production`）
+- `CORS_ALLOWED_ORIGINS`: 允许的 CORS 源（生产环境，逗号分隔）
+
+**生成随机密钥**：
+```bash
+# 使用 OpenSSL
+openssl rand -hex 32
+
+# 使用 Python
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+#### 使用场景
+
+- **配置管理员**: 需要管理多个用户或群组的配置
+- **配置迁移**: 需要在不同环境间迁移配置
+- **配置审计**: 需要查看配置历史和变更记录
+- **批量操作**: 需要同时查看或修改多个配置
+
+#### 详细文档
+
+完整的 Web 管理界面文档请参见 [WEB_ADMIN_README.md](WEB_ADMIN_README.md)，包括：
+- 详细的安装和配置说明
+- 环境变量配置详解
+- 使用指南和操作说明
+- 故障排查和常见问题
+- 部署指南（Gunicorn、Nginx、HTTPS、Systemd）
+- 性能优化说明
 
 ## 快速开始
 
@@ -672,6 +794,7 @@ class CommandParser:
 - **用户指南**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md) - 如何使用机器人
 - **配置指南**: [docs/CONFIGURATION.md](docs/CONFIGURATION.md) - 详细配置说明
 - **语言配置**: [docs/LANGUAGE_CONFIGURATION.md](docs/LANGUAGE_CONFIGURATION.md) - 语言设置说明
+- **Web 管理界面**: [WEB_ADMIN_README.md](WEB_ADMIN_README.md) - Web 管理界面完整文档
 - **部署指南**: [docs/deployment/DEPLOYMENT.md](docs/deployment/DEPLOYMENT.md) - Docker 和云端部署
 - **快速部署**: [docs/deployment/QUICKSTART.md](docs/deployment/QUICKSTART.md) - 5分钟快速部署
 - **文档目录**: [docs/README.md](docs/README.md) - 所有文档索引

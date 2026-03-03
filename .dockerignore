@@ -91,3 +91,13 @@ docker-compose.*.yml
 
 # Kiro specs
 .kiro/
+
+# Frontend (will be built separately in multi-stage)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+
+# Deployment configs (not needed in container)
+deployment/
+scripts/

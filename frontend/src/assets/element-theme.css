@@ -1,0 +1,265 @@
+/* Element Plus Custom Theme - Modern Professional Style */
+
+:root {
+  /* Primary Colors - Modern Blue */
+  --el-color-primary: #3b82f6;
+  --el-color-primary-light-3: #60a5fa;
+  --el-color-primary-light-5: #93c5fd;
+  --el-color-primary-light-7: #bfdbfe;
+  --el-color-primary-light-8: #dbeafe;
+  --el-color-primary-light-9: #eff6ff;
+  --el-color-primary-dark-2: #2563eb;
+
+  /* Success Colors - Modern Green */
+  --el-color-success: #10b981;
+  --el-color-success-light-3: #34d399;
+  --el-color-success-light-5: #6ee7b7;
+  --el-color-success-light-7: #a7f3d0;
+  --el-color-success-light-8: #d1fae5;
+  --el-color-success-light-9: #ecfdf5;
+  --el-color-success-dark-2: #059669;
+
+  /* Warning Colors - Modern Amber */
+  --el-color-warning: #f59e0b;
+  --el-color-warning-light-3: #fbbf24;
+  --el-color-warning-light-5: #fcd34d;
+  --el-color-warning-light-7: #fde68a;
+  --el-color-warning-light-8: #fef3c7;
+  --el-color-warning-light-9: #fffbeb;
+  --el-color-warning-dark-2: #d97706;
+
+  /* Danger Colors - Modern Red */
+  --el-color-danger: #ef4444;
+  --el-color-danger-light-3: #f87171;
+  --el-color-danger-light-5: #fca5a5;
+  --el-color-danger-light-7: #fecaca;
+  --el-color-danger-light-8: #fee2e2;
+  --el-color-danger-light-9: #fef2f2;
+  --el-color-danger-dark-2: #dc2626;
+
+  /* Info Colors - Modern Gray-Blue */
+  --el-color-info: #6b7280;
+  --el-color-info-light-3: #9ca3af;
+  --el-color-info-light-5: #d1d5db;
+  --el-color-info-light-7: #e5e7eb;
+  --el-color-info-light-8: #f3f4f6;
+  --el-color-info-light-9: #f9fafb;
+  --el-color-info-dark-2: #4b5563;
+
+  /* Typography */
+  --el-font-size-base: 14px;
+  --el-font-size-small: 13px;
+  --el-font-size-large: 16px;
+  --el-font-size-extra-large: 18px;
+  --el-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --el-font-weight-primary: 500;
+
+  /* Border Radius - Modern Rounded */
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 6px;
+  --el-border-radius-round: 20px;
+  --el-border-radius-circle: 100%;
+
+  /* Shadows - Subtle and Modern */
+  --el-box-shadow-base: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --el-box-shadow-light: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --el-box-shadow-dark: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  /* Transitions - Smooth */
+  --el-transition-duration: 0.2s;
+  --el-transition-duration-fast: 0.15s;
+  --el-transition-function-ease-in-out-bezier: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Background Colors */
+  --el-bg-color: #ffffff;
+  --el-bg-color-page: #f9fafb;
+  --el-bg-color-overlay: #ffffff;
+
+  /* Text Colors */
+  --el-text-color-primary: #1f2937;
+  --el-text-color-regular: #374151;
+  --el-text-color-secondary: #6b7280;
+  --el-text-color-placeholder: #9ca3af;
+  --el-text-color-disabled: #d1d5db;
+
+  /* Border Colors */
+  --el-border-color: #e5e7eb;
+  --el-border-color-light: #f3f4f6;
+  --el-border-color-lighter: #f9fafb;
+  --el-border-color-extra-light: #fafafa;
+  --el-border-color-dark: #d1d5db;
+  --el-border-color-darker: #9ca3af;
+
+  /* Fill Colors */
+  --el-fill-color: #f3f4f6;
+  --el-fill-color-light: #f9fafb;
+  --el-fill-color-lighter: #fafafa;
+  --el-fill-color-extra-light: #fcfcfc;
+  --el-fill-color-dark: #e5e7eb;
+  --el-fill-color-darker: #d1d5db;
+  --el-fill-color-blank: #ffffff;
+}
+
+/* Component Customizations */
+
+/* Card - Modern elevated style */
+.el-card {
+  border-radius: var(--el-border-radius-base);
+  box-shadow: var(--el-box-shadow-light);
+  transition: box-shadow var(--el-transition-duration) var(--el-transition-function-ease-in-out-bezier);
+}
+
+.el-card:hover {
+  box-shadow: var(--el-box-shadow-base);
+}
+
+/* Button - Refined style */
+.el-button {
+  font-weight: var(--el-font-weight-primary);
+  border-radius: var(--el-border-radius-small);
+  transition: all var(--el-transition-duration) var(--el-transition-function-ease-in-out-bezier);
+}
+
+.el-button--primary {
+  background-color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+}
+
+.el-button--primary:hover {
+  background-color: var(--el-color-primary-light-3);
+  border-color: var(--el-color-primary-light-3);
+}
+
+/* Input - Clean and modern */
+.el-input__wrapper {
+  border-radius: var(--el-border-radius-small);
+  transition: all var(--el-transition-duration) var(--el-transition-function-ease-in-out-bezier);
+}
+
+.el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--el-border-color-dark) inset;
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+}
+
+/* Table - Clean and readable */
+.el-table {
+  font-size: var(--el-font-size-base);
+}
+
+.el-table th.el-table__cell {
+  background-color: var(--el-fill-color-light);
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.el-table tr:hover > td {
+  background-color: var(--el-fill-color-light);
+}
+
+/* Dialog - Modern modal */
+.el-dialog {
+  border-radius: var(--el-border-radius-base);
+  box-shadow: var(--el-box-shadow-dark);
+}
+
+.el-dialog__header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--el-border-color);
+}
+
+.el-dialog__body {
+  padding: 24px;
+}
+
+.el-dialog__footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--el-border-color);
+}
+
+/* Message - Refined notifications */
+.el-message {
+  border-radius: var(--el-border-radius-base);
+  box-shadow: var(--el-box-shadow-base);
+  padding: 16px 20px;
+}
+
+/* Form - Better spacing */
+.el-form-item {
+  margin-bottom: 22px;
+}
+
+.el-form-item__label {
+  font-weight: var(--el-font-weight-primary);
+  color: var(--el-text-color-primary);
+}
+
+/* Select - Modern dropdown */
+.el-select-dropdown {
+  border-radius: var(--el-border-radius-small);
+  box-shadow: var(--el-box-shadow-base);
+}
+
+.el-select-dropdown__item.is-selected {
+  font-weight: 600;
+}
+
+/* Menu - Clean navigation */
+.el-menu {
+  border-right: none;
+}
+
+.el-menu-item:hover,
+.el-sub-menu__title:hover {
+  background-color: var(--el-fill-color-light);
+}
+
+.el-menu-item.is-active {
+  background-color: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+
+/* Loading - Smooth animation */
+.el-loading-mask {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Pagination - Modern style */
+.el-pagination {
+  font-weight: var(--el-font-weight-primary);
+}
+
+.el-pagination button,
+.el-pager li {
+  border-radius: var(--el-border-radius-small);
+}
+
+/* Tag - Refined badges */
+.el-tag {
+  border-radius: var(--el-border-radius-small);
+  font-weight: var(--el-font-weight-primary);
+}
+
+/* Scrollbar - Subtle and modern */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--el-fill-color-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--el-border-color-dark);
+  border-radius: 4px;
+  transition: background var(--el-transition-duration);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--el-border-color-darker);
+}

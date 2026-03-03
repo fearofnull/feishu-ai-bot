@@ -6,14 +6,16 @@
 
 ```
 scripts/
-├── deploy.sh           # 部署管理脚本
-├── verify_config.py    # 配置验证脚本
-├── test/               # 测试相关脚本
+├── deploy.sh                  # 部署管理脚本
+├── set_file_permissions.py    # 文件权限设置脚本
+├── start_web_admin.sh         # Web 管理界面启动脚本
+├── verify_config.py           # 配置验证脚本
+├── test/                      # 测试相关脚本
 │   ├── get_chat_id.py
 │   ├── run_integration_test.py
 │   ├── send_test_message.py
 │   └── README.md
-└── README.md           # 本文件
+└── README.md                  # 本文件
 ```
 
 ## 脚本说明
@@ -77,6 +79,71 @@ TARGET_PROJECT_DIR: ✅ 已配置
 ============================================================
 
 ✅ 配置验证通过
+```
+
+### set_file_permissions.py - 文件权限设置脚本
+
+设置配置文件和日志文件的安全权限，用于生产环境安全加固。
+
+**用法**：
+```bash
+python scripts/set_file_permissions.py
+```
+
+**功能**：
+- 将配置文件（.env、session_configs.json、备份文件）权限设置为 600（仅所有者可读写）
+- 将日志文件权限设置为 640（所有者可读写，组可读）
+- 自动创建必要的目录（data、logs）
+- 验证权限设置是否成功
+
+**示例输出**：
+```
+============================================================
+文件权限设置脚本
+============================================================
+
+=== 设置配置文件权限 (600) ===
+✓ 已设置 .env 权限为 0o600
+✓ 已设置 data/session_configs.json 权限为 0o600
+
+配置文件: 2/2 成功
+
+=== 设置日志文件权限 (640) ===
+✓ 已设置 logs/web_admin.log 权限为 0o640
+✓ 已设置 logs/web_admin_access.log 权限为 0o640
+
+日志文件: 2/2 成功
+
+============================================================
+✓ 所有文件权限设置成功
+============================================================
+```
+
+**注意**：
+- 在 Windows 系统上，Unix 风格的文件权限可能不会完全生效
+- 建议在 Linux/Unix 系统上运行此脚本
+- 权限设置应该在部署后立即执行
+
+### start_web_admin.sh - Web 管理界面启动脚本
+
+启动 Web 管理界面服务的便捷脚本。
+
+**用法**：
+```bash
+./scripts/start_web_admin.sh [模式]
+```
+
+**模式**：
+- `development` - 开发模式（使用 Flask 开发服务器）
+- `production` - 生产模式（使用 Gunicorn）
+
+**示例**：
+```bash
+# 开发模式
+./scripts/start_web_admin.sh development
+
+# 生产模式
+./scripts/start_web_admin.sh production
 ```
 
 ## 测试脚本

@@ -5,7 +5,7 @@
 """
 import re
 import logging
-from typing import Optional
+from typing import Optional, Dict, Tuple
 from feishu_bot.models import ParsedCommand
 
 logger = logging.getLogger(__name__)
@@ -48,39 +48,43 @@ class CommandParser:
         "分析项目", "analyze project", "项目结构", "project structure",
     ]
     
-    def parse_command(self, message: str) -> ParsedCommand:
-        """解析用户消息，返回解析结果
+    def parse_command(self, message: str) -> Tuple[ParsedCommand, Dict[str, str]]:
+        """解析用户消息，返回解析结果和临时参数
         
         Args:
             message: 用户消息
             
         Returns:
-            ParsedCommand: 包含 AI 提供商、执行层、实际消息内容
+            Tuple[ParsedCommand, Dict[str, str]]: (解析后的命令, 临时参数字典)
         """
-        # 提取 AI 提供商前缀
-        prefix_result = self.extract_provider_prefix(message)
+        # 1. 提取临时参数
+        clean_message, temp_params = self.parse_temp_params(message)
+        
+        # 2. 提取 AI 提供商前缀
+        prefix_result = self.extract_provider_prefix(clean_message)
         
         if prefix_result:
-            provider, layer, clean_message = prefix_result
+            provider, layer, final_message = prefix_result
             logger.info(
                 f"Command parsed with explicit prefix: provider={provider}, "
-                f"layer={layer}, message_length={len(clean_message)}"
+                f"layer={layer}, message_length={len(final_message)}, "
+                f"temp_params={temp_params}"
             )
             return ParsedCommand(
                 provider=provider,
                 execution_layer=layer,
-                message=clean_message,
+                message=final_message,
                 explicit=True
-            )
+            ), temp_params
         
         # 没有显式指定，返回默认值
-        logger.debug("No explicit prefix found, using defaults")
+        logger.debug(f"No explicit prefix found, using defaults, temp_params={temp_params}")
         return ParsedCommand(
             provider="claude",  # 默认提供商
             execution_layer="api",  # 默认执行层
-            message=message,
+            message=clean_message,
             explicit=False
-        )
+        ), temp_params
     
     def extract_provider_prefix(self, message: str) -> Optional[tuple[str, str, str]]:
         """提取 AI 提供商前缀
@@ -129,3 +133,26 @@ class CommandParser:
                 return True
         
         return False
+    
+    def parse_temp_params(self, message: str) -> Tuple[str, Dict[str, str]]:
+        """解析临时参数
+        
+        Args:
+            message: 用户消息
+            
+        Returns:
+            Tuple[str, Dict[str, str]]: (清理后的消息, 临时参数字典)
+        """
+        temp_params = {}
+        clean_message = message
+        
+        # 匹配 --key=value 格式的参数
+        pattern = r'--(\w+)=([^\s]+)'
+        matches = re.findall(pattern, message)
+        
+        for key, value in matches:
+            temp_params[key] = value
+            # 从消息中移除该参数
+            clean_message = re.sub(rf'--{key}={re.escape(value)}\s*', '', clean_message)
+        
+        return clean_message.strip(), temp_params

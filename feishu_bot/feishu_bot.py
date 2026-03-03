@@ -11,6 +11,7 @@ from .config import BotConfig
 from .utils.cache import DeduplicationCache
 from .core.message_handler import MessageHandler
 from .core.session_manager import SessionManager
+from .core.config_manager import ConfigManager
 from .utils.command_parser import CommandParser
 from .core.executor_registry import ExecutorRegistry
 from .core.smart_router import SmartRouter
@@ -57,6 +58,10 @@ class FeishuBot:
             storage_path=config.session_storage_path,
             max_messages=config.max_session_messages,
             session_timeout=config.session_timeout
+        )
+        self.config_manager = ConfigManager(
+            storage_path="./data/session_configs.json",
+            global_config=config
         )
         self.command_parser = CommandParser()
         self.executor_registry = ExecutorRegistry()
@@ -273,8 +278,8 @@ class FeishuBot:
                 )
                 return
             
-            # 3. 命令解析（在组合引用消息之前，从当前消息中提取命令前缀）
-            parsed_command = self.command_parser.parse_command(message_content)
+            # 4. 命令解析（在组合引用消息之前，从当前消息中提取命令前缀和临时参数）
+            parsed_command, temp_params = self.command_parser.parse_command(message_content)
             
             # 处理引用消息（使用解析后的消息内容）
             final_message = parsed_command.message
@@ -305,15 +310,47 @@ class FeishuBot:
             )
             logger.info(f"Final message to be sent to executor (first 200 chars): {final_message[:200]}")
             
-            # 4. 会话命令检查
+            # 5. 确定会话 ID（私聊用 user_id，群聊用 chat_id）
+            session_id = sender_id if chat_type == "p2p" else chat_id
+            session_type = "user" if chat_type == "p2p" else "group"
+            
+            # 6. 配置命令检查
+            if self._handle_config_command(
+                session_id, session_type, sender_id, parsed_command.message, 
+                chat_type, chat_id, message_id
+            ):
+                return
+            
+            # 7. 会话命令检查
             if self._handle_session_command(
                 sender_id, parsed_command.message, chat_type, chat_id, message_id
             ):
                 return
             
-            # 5. 智能路由
+            # 8. 获取有效配置（应用临时参数）
+            effective_config = self.config_manager.get_effective_config(
+                session_id, session_type, temp_params
+            )
+            
+            # 9. 智能路由（使用有效配置）
+            # 9. 智能路由（使用有效配置）
             try:
+                # 临时覆盖全局配置（用于路由决策）
+                original_provider = self.config.default_provider
+                original_layer = self.config.default_layer
+                original_cli_provider = self.config.default_cli_provider
+                
+                self.config.default_provider = effective_config["default_provider"]
+                self.config.default_layer = effective_config["default_layer"]
+                self.config.default_cli_provider = effective_config["default_cli_provider"]
+                
                 executor = self.smart_router.route(parsed_command)
+                
+                # 恢复原始配置
+                self.config.default_provider = original_provider
+                self.config.default_layer = original_layer
+                self.config.default_cli_provider = original_cli_provider
+                
             except Exception as e:
                 error_msg = f"路由失败：{str(e)}"
                 logger.error(error_msg)
@@ -325,7 +362,8 @@ class FeishuBot:
                 )
                 return
             
-            # 6. AI 执行
+            # 10. AI 执行
+            # 10. AI 执行
             try:
                 # 获取对话历史
                 conversation_history = self.session_manager.get_conversation_history(
@@ -348,8 +386,10 @@ class FeishuBot:
                 executor_metadata = self.executor_registry.get_executor_metadata(provider, layer)
                 executor_name = executor_metadata.name if executor_metadata else None
                 
-                # 添加语言指令（如果配置了）
-                message_with_language = self.config.prepend_language_instruction(parsed_command.message)
+                # 添加语言指令（使用有效配置中的语言设置）
+                message_with_language = self._prepend_language_instruction(
+                    parsed_command.message, effective_config["response_language"]
+                )
                 
                 # 执行 AI
                 if executor.get_provider_name().endswith("-api"):
@@ -360,14 +400,28 @@ class FeishuBot:
                         conversation_history=conversation_history
                     )
                 else:
-                    # CLI 层：使用原生会话
+                    # CLI 层：使用原生会话，传递有效的项目目录
                     logger.info(f"[CLI] Executing with message: {message_with_language[:200]}...")
-                    result = executor.execute(
-                        message_with_language,
-                        additional_params={"user_id": sender_id}
-                    )
+                    # 临时更新 CLI 执行器的目标目录
+                    if hasattr(executor, 'target_dir') and effective_config["target_project_dir"]:
+                        original_target_dir = executor.target_dir
+                        executor.target_dir = effective_config["target_project_dir"]
+                        
+                        result = executor.execute(
+                            message_with_language,
+                            additional_params={"user_id": sender_id}
+                        )
+                        
+                        # 恢复原始目录
+                        executor.target_dir = original_target_dir
+                    else:
+                        result = executor.execute(
+                            message_with_language,
+                            additional_params={"user_id": sender_id}
+                        )
                 
-                # 7. 响应格式化
+                # 11. 响应格式化
+                # 11. 响应格式化
                 if result.success:
                     response = self.response_formatter.format_response(
                         message_content, result.stdout, executor_name=executor_name
@@ -377,12 +431,12 @@ class FeishuBot:
                         message_content, result.error_message or result.stderr, executor_name=executor_name
                     )
                 
-                # 8. 消息发送
+                # 12. 消息发送
                 self.message_sender.send_message(
                     chat_type, chat_id, message_id, response
                 )
                 
-                # 9. 会话历史更新
+                # 13. 会话历史更新
                 self.session_manager.add_message(sender_id, "user", parsed_command.message)
                 self.session_manager.add_message(
                     sender_id, "assistant", result.stdout if result.success else result.error_message
@@ -460,6 +514,48 @@ class FeishuBot:
             # 出错时默认返回 True，避免漏掉消息
             return True
     
+    def _handle_config_command(
+        self,
+        session_id: str,
+        session_type: str,
+        user_id: str,
+        message: str,
+        chat_type: str,
+        chat_id: str,
+        message_id: str
+    ) -> bool:
+        """处理配置命令
+        
+        Args:
+            session_id: 会话 ID（user_id 或 chat_id）
+            session_type: 会话类型（"user" 或 "group"）
+            user_id: 操作用户 ID
+            message: 消息内容
+            chat_type: 聊天类型
+            chat_id: 聊天 ID
+            message_id: 消息 ID
+            
+        Returns:
+            True 如果是配置命令并已处理
+        """
+        # 检查是否为配置命令
+        if not self.config_manager.is_config_command(message):
+            return False
+        
+        # 使用 config_manager 处理命令
+        response = self.config_manager.handle_config_command(
+            session_id, session_type, user_id, message
+        )
+        
+        # 发送响应
+        if response:
+            self.message_sender.send_message(
+                chat_type, chat_id, message_id, response
+            )
+            return True
+        
+        return False
+    
     def _handle_session_command(
         self,
         user_id: str,
@@ -506,6 +602,43 @@ class FeishuBot:
             return True
         
         return False
+    
+    def _prepend_language_instruction(self, message: str, language: Optional[str]) -> str:
+        """在消息前添加语言指令
+        
+        Args:
+            message: 原始消息
+            language: 语言代码（如 zh-CN, en-US）
+            
+        Returns:
+            添加了语言指令的消息（如果配置了语言）
+        """
+        if not language:
+            return message
+        
+        # 语言代码到自然语言的映射
+        language_map = {
+            "zh-CN": "中文（简体）",
+            "zh-TW": "中文（繁體）",
+            "en-US": "English",
+            "en-GB": "English (UK)",
+            "ja-JP": "日本語",
+            "ko-KR": "한국어",
+            "fr-FR": "Français",
+            "de-DE": "Deutsch",
+            "es-ES": "Español",
+            "ru-RU": "Русский",
+            "pt-BR": "Português (Brasil)",
+            "it-IT": "Italiano",
+            "ar-SA": "العربية",
+            "hi-IN": "हिन्दी",
+        }
+        
+        language_name = language_map.get(language, language)
+        instruction = f"Please respond in {language_name}."
+        
+        # 使用单行格式，避免 CLI headless 模式的多行问题
+        return f"{instruction} {message}"
     
     def start(self) -> None:
         """启动机器人"""
