@@ -76,8 +76,10 @@ However, CLI executors (Gemini CLI, Claude CLI) running in headless mode do NOT 
 Change the message format to use a single-line separator instead of newlines:
 
 ```python
-combined = f"引用消息：{quoted} | 当前消息：{current}"
+combined = f"引用消息：{quoted} >>> 当前消息：{current}"
 ```
+
+The `>>>` separator is CLI-friendly (not interpreted as a shell operator), visually clear, and avoids encoding issues that might occur with special Unicode characters like `【】`.
 
 This is consistent with the fix previously applied to `_prepend_language_instruction()` method, which also uses single-line format to avoid CLI headless mode issues.
 
@@ -117,17 +119,20 @@ _For any_ message event where no card message is quoted OR the target is an API 
 
 **Specific Changes**:
 
-Change the message format from multi-line to single-line:
+Change the message format from multi-line to single-line with a CLI-friendly separator:
 
 ```python
 # Before (buggy):
 combined = f"引用消息：{quoted}\n\n当前消息：{current}"
 
 # After (fixed):
-combined = f"引用消息：{quoted} | 当前消息：{current}"
+combined = f"引用消息：{quoted} >>> 当前消息：{current}"
 ```
 
-This ensures the entire combined message is passed as a single line to the CLI executor, avoiding truncation or parsing issues in headless mode.
+This ensures the entire combined message is passed as a single line to the CLI executor, avoiding truncation or parsing issues in headless mode. The `>>>` separator is:
+- CLI-friendly (not interpreted as a shell operator like `|` or `>`)
+- Visually clear and easy to parse
+- ASCII-based, avoiding potential encoding issues with Unicode characters
 
 **Additional Changes**:
 
@@ -136,17 +141,22 @@ Add a note in the docstring to document this requirement:
 ```python
 Note:
     使用单行格式，避免 CLI headless 模式的多行问题
+    使用 >>> 作为分隔符，CLI友好且避免与消息内容冲突
 ```
 
 ### Why This Fix Works
 
-1. **Single-line format**: By using ` | ` as a separator instead of `\n\n`, the entire message remains on a single line.
+1. **Single-line format**: By using ` >>> ` as a separator instead of `\n\n`, the entire message remains on a single line.
 
-2. **Consistent with existing patterns**: This follows the same pattern used in `_prepend_language_instruction()` method, which also uses single-line format for CLI compatibility.
+2. **CLI-friendly separator**: The `>>>` separator is not interpreted as a shell operator (unlike `|` or `>`), avoiding command parsing issues.
 
-3. **Preserves all content**: The quoted content and current message are both included in the combined message, just formatted differently.
+3. **Consistent with existing patterns**: This follows the same pattern used in `_prepend_language_instruction()` method, which also uses single-line format for CLI compatibility.
 
-4. **CLI-compatible**: Single-line messages work correctly with both Gemini CLI and Claude CLI in headless mode.
+4. **Preserves all content**: The quoted content and current message are both included in the combined message, just formatted differently.
+
+5. **No encoding issues**: Using ASCII characters (`>>>`) avoids potential encoding problems with Unicode characters like `【】` in Windows CLI environments.
+
+6. **CLI-compatible**: Single-line messages work correctly with both Gemini CLI and Claude CLI in headless mode.
 
 ## Testing Strategy
 

@@ -423,10 +423,12 @@ class MessageHandler:
         
         Note:
             使用单行格式，避免 CLI headless 模式的多行问题
+            使用 >>> 作为分隔符，CLI友好且避免与消息内容冲突
         """
         if quoted:
-            # 使用单行格式，避免 CLI headless 模式的多行问题
-            combined = f"引用消息：{quoted} | 当前消息：{current}"
+            # 使用单行格式和 >>> 分隔符，避免 CLI headless 模式的多行问题
+            # >>> 是CLI友好的分隔符，不会被shell解释为特殊字符
+            combined = f"引用消息：{quoted} >>> 当前消息：{current}"
             logger.debug(f"组合消息: 引用消息长度={len(quoted)}, 当前消息长度={len(current)}")
             return combined
         else:

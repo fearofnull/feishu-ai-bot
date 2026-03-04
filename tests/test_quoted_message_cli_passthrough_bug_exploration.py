@@ -49,8 +49,8 @@ class TestQuotedMessageCLIPassthroughBugExploration:
         current_message_text = "explain this"
         parent_id = "parent_msg_123"
         
-        # 期望的组合消息（使用单行格式，避免 CLI headless 模式的多行问题）
-        expected_combined_message = f"引用消息：[卡片消息]\n{quoted_card_content} | 当前消息：{current_message_text}"
+        # 期望的组合消息（使用单行格式和 >>> 分隔符，避免 CLI headless 模式的多行问题）
+        expected_combined_message = f"引用消息：[卡片消息]\n{quoted_card_content} >>> 当前消息：{current_message_text}"
         
         # 创建模拟配置
         mock_config = Mock(spec=BotConfig)
