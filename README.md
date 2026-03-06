@@ -8,7 +8,7 @@
 - 🔀 **智能路由**: 自动根据用户命令和消息内容选择最合适的AI服务（API层或CLI层）
 - 💬 **消息处理**: 接收和回复飞书消息，支持文本、引用等多种消息类型
 - 🔄 **消息去重**: 使用deque实现高效的消息去重机制
-- 🛠️ **代码操作**: 通过Claude Code CLI和Gemini CLI执行代码查看、修改等操作
+- 🛠️ **代码操作**: 通过Claude Code CLI、Gemini CLI和Qwen Code CLI执行代码查看、修改等操作
 - ⚡ **快速响应**: API层提供快速响应，CLI层提供深度代码操作
 - 💾 **会话管理**: 支持上下文连续对话，自动管理会话历史和轮换
 - 🔌 **可扩展架构**: 轻松添加新的AI Agent和命令前缀
@@ -52,6 +52,7 @@
 **CLI层前缀**：
 - `@code` 或 `@claude-cli` → Claude Code CLI
 - `@gemini-cli` → Gemini CLI
+- `@qwen-cli` → Qwen Code CLI
 
 示例：
 ```
@@ -96,7 +97,7 @@
 | **代码访问** | 无法访问本地代码 | 可以访问和操作本地代码 |
 | **适用场景** | 一般问答、概念解释、翻译、写作 | 代码分析、文件操作、项目查看 |
 | **上下文管理** | 手动传递对话历史 | 使用原生会话管理 |
-| **支持的AI** | Claude API、Gemini API、OpenAI API | Claude Code CLI、Gemini CLI |
+| **支持的AI** | Claude API、Gemini API、OpenAI API | Claude Code CLI、Gemini CLI、Qwen Code CLI |
 
 **选择建议**：
 - 简单问答、概念解释 → 使用API层（`@claude`、`@gemini`、`@openai`）
@@ -173,7 +174,11 @@
    - 从 `data/executor_sessions.json` 中删除 user_id 映射
    - 下次调用时不传 `--resume` 参数，让 Gemini CLI 创建新会话
 
-5. **返回确认消息**：
+5. **清除 Qwen CLI 会话映射**：
+   - 从 `data/executor_sessions.json` 中删除 user_id 映射
+   - 下次调用时不传 `--resume` 参数，让 Qwen Code CLI 创建新会话
+
+6. **返回确认消息**：
    - "✅ 已创建新会话 / New session created"
 
 #### 会话管理架构说明
@@ -298,6 +303,73 @@
 - 💾 **导出导入**: 支持配置数据的备份和迁移
 - 🌐 **全局配置**: 查看系统默认配置
 - 📱 **响应式设计**: 适配桌面、平板和移动设备
+
+#### AI 提供商配置（推荐）
+
+Web 管理界面提供了统一的 AI 提供商配置系统，用于管理所有 AI API 提供商的连接配置。
+
+**功能特性**：
+- 🔧 **多提供商管理**: 支持添加多个 AI 提供商配置（OpenAI、Claude、Gemini 等）
+- 🎯 **多模型支持**: 每个提供商可配置多个模型，并指定默认模型
+- 🔄 **动态切换**: 无需重启服务即可切换默认提供商
+- 🔐 **安全管理**: API Key 安全存储和脱敏显示
+- ✨ **图形化界面**: 直观的卡片式布局，易于管理
+
+**使用步骤**：
+
+1. **访问提供商配置页面**：
+   - 登录 Web 管理界面
+   - 点击左侧菜单的 "AI 提供商配置"
+
+2. **添加提供商**：
+   - 点击 "添加提供商" 按钮
+   - 填写配置信息：
+     - 名称：如 `openai-gpt4`
+     - 类型：选择 `OpenAI 兼容`、`Claude 兼容` 或 `Gemini 兼容`
+     - Base URL：API 端点地址（可选）
+     - API Key：你的 API 密钥
+     - 模型列表：添加一个或多个模型（如 `gpt-4o`、`gpt-4-turbo`）
+     - 默认模型：从模型列表中选择默认使用的模型
+   - 点击 "添加" 保存
+
+3. **设置默认提供商**：
+   - 在提供商卡片上点击 "设为默认" 按钮
+   - 系统会自动使用该提供商处理 `@gpt` 命令
+
+4. **编辑和删除**：
+   - 点击 "编辑" 按钮修改配置
+   - 点击 "删除" 按钮移除提供商
+
+**配置示例**：
+
+```
+名称: openai-gpt4
+类型: OpenAI 兼容
+Base URL: https://api.openai.com/v1
+API Key: sk-...
+模型列表: 
+  - gpt-4o ✓ (默认)
+  - gpt-4-turbo
+  - gpt-3.5-turbo
+```
+
+**迁移指南**：
+
+如果你之前使用 `.env` 文件配置 API 密钥，建议迁移到 Web 管理界面：
+
+1. 访问 Web 管理界面的 "AI 提供商配置" 页面
+2. 为每个 AI 服务创建提供商配置
+3. 将 `.env` 中的 API Key 复制到对应的提供商配置中
+4. 设置默认提供商
+5. 测试配置是否正常工作
+6. （可选）从 `.env` 文件中移除已废弃的 API 配置项
+
+**优势**：
+- ✅ 支持多个提供商和多个模型
+- ✅ 动态切换，无需重启服务
+- ✅ 图形化界面，更易管理
+- ✅ 更安全的 API Key 管理
+- ✅ 配置持久化到 `data/provider_configs.json`
 
 #### 快速启动
 
@@ -457,6 +529,7 @@ docker logs -f feishu-ai-bot
 - 至少一个AI服务的API密钥（Claude API、Gemini API或OpenAI API）
 - Claude Code CLI（可选，用于代码操作）
 - Gemini CLI（可选，用于代码操作）
+- Qwen Code CLI（可选，用于代码操作）
 
 #### 安装步骤
 
@@ -590,6 +663,7 @@ python lark_bot.py
 @机器人 @code 分析这个项目的架构
 @机器人 @claude-cli 查看src/main.py文件
 @机器人 @gemini-cli 修改README.md文件
+@机器人 @qwen-cli 分析代码质量
 ```
 
 #### 会话管理命令
@@ -840,6 +914,9 @@ class CommandParser:
 - **Gemini CLI**:
   - 会话管理：https://geminicli.com/docs/cli/session-management/
   - Headless模式：https://geminicli.com/docs/cli/headless/
+- **Qwen Code CLI**:
+  - 文档：https://qwenlm.github.io/qwen-code-docs/
+  - Headless模式：https://qwenlm.github.io/qwen-code-docs/zh/users/features/headless/
 
 ### 飞书开放平台
 - **飞书API Explorer**: https://open.feishu.cn/api-explorer
@@ -909,6 +986,7 @@ pip install -r requirements.txt --upgrade
 # 2. 检查CLI工具安装
 claude --version  # 检查Claude Code CLI
 gemini --version  # 检查Gemini CLI
+qwen --version    # 检查Qwen Code CLI
 
 # 3. 验证目标目录
 # 确保TARGET_PROJECT_DIR指向的目录存在
@@ -1057,7 +1135,7 @@ python -c "from feishu_bot.session_manager import SessionManager; sm = SessionMa
 │   ├── executor_registry.py # 执行器注册表
 │   ├── executors/           # AI 执行器
 │   │   ├── *_api_executor.py    # API执行器（Claude、Gemini、OpenAI）
-│   │   └── *_cli_executor.py    # CLI执行器（Claude Code、Gemini）
+│   │   └── *_cli_executor.py    # CLI执行器（Claude Code、Gemini CLI、Qwen Code）
 │   ├── web_admin/           # Web 管理界面
 │   └── utils/               # 工具类
 │

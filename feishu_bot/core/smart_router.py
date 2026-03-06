@@ -32,7 +32,8 @@ class SmartRouter:
         default_provider: str = "claude",
         default_layer: str = "api",
         default_cli_provider: Optional[str] = None,
-        use_ai_intent_classification: bool = True
+        use_ai_intent_classification: bool = True,
+        unified_api_interface: Optional[AIExecutor] = None
     ):
         """初始化智能路由器
         
@@ -42,6 +43,7 @@ class SmartRouter:
             default_layer: 默认执行层（api 或 cli）
             default_cli_provider: CLI层专用默认提供商（如果不设置则自动检测第一个可用的CLI）
             use_ai_intent_classification: 是否使用AI进行意图分类（推荐开启）
+            unified_api_interface: 统一API接口实例（可选）
         """
         self.executor_registry = executor_registry
         self.default_provider = default_provider
@@ -49,6 +51,7 @@ class SmartRouter:
         self.default_cli_provider = default_cli_provider  # 可能为None，稍后自动检测
         self.command_parser = CommandParser()
         self.use_ai_intent_classification = use_ai_intent_classification
+        self.unified_api_interface = unified_api_interface
         
         # 初始化意图分类器（延迟初始化API执行器）
         self.intent_classifier = None
@@ -57,7 +60,8 @@ class SmartRouter:
             f"SmartRouter initialized with default provider={default_provider}, "
             f"default layer={default_layer}, "
             f"default CLI provider={self.default_cli_provider or 'auto-detect'}, "
-            f"ai_intent_classification={use_ai_intent_classification}"
+            f"ai_intent_classification={use_ai_intent_classification}, "
+            f"unified_api={'enabled' if unified_api_interface else 'disabled'}"
         )
     
     def route(self, parsed_command: ParsedCommand) -> AIExecutor:
@@ -75,6 +79,23 @@ class SmartRouter:
         provider = parsed_command.provider
         layer = parsed_command.execution_layer
         message_preview = parsed_command.message[:50] + "..." if len(parsed_command.message) > 50 else parsed_command.message
+        
+        # 特殊处理：如果provider是"unified"，使用统一API接口
+        if provider == "unified":
+            if self.unified_api_interface is None:
+                logger.error("[ROUTING] Unified API interface not configured")
+                raise ExecutorNotAvailableError(
+                    "unified",
+                    "api",
+                    "Unified API interface not configured. Please configure provider settings."
+                )
+            
+            logger.info("[ROUTING] Using Unified API interface for @gpt command")
+            logger.debug(f"[ROUTING] Message: '{message_preview}'")
+            
+            # 返回统一API接口作为执行器
+            # 注意：UnifiedAPIInterface需要实现AIExecutor接口
+            return self.unified_api_interface
         
         # 如果用户显式指定，直接使用指定的执行器
         if parsed_command.explicit:

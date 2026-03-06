@@ -5,6 +5,7 @@ import ConfigDetail from '../views/ConfigDetail.vue'
 import GlobalConfig from '../views/GlobalConfig.vue'
 import Sessions from '../views/Sessions.vue'
 import SessionDetail from '../views/SessionDetail.vue'
+import Providers from '../views/Providers.vue'
 
 const routes = [
   {
@@ -44,6 +45,12 @@ const routes = [
     path: '/sessions/:id',
     name: 'SessionDetail',
     component: SessionDetail,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/providers',
+    name: 'Providers',
+    component: Providers,
     meta: { requiresAuth: true }
   }
 ]

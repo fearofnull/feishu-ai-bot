@@ -30,6 +30,7 @@ cp .env.example .env
 #### CLI 层（代码操作）
 - `@claude-cli` 或 `@code` → Claude Code CLI
 - `@gemini-cli` → Gemini CLI
+- `@qwen-cli` → Qwen Code CLI
 
 ### 使用示例
 
@@ -131,6 +132,20 @@ CLAUDE_CLI_TARGET_DIR=E:\IdeaProjects\special-project
 - **注意**: 
   - 如果未配置，将使用 TARGET_PROJECT_DIR
   - 可以与 Claude CLI 使用不同的项目目录
+
+#### QWEN_CLI_TARGET_DIR
+- **类型**: 字符串（文件路径）
+- **必需**: 否（使用 Qwen Code CLI 时需要）
+- **默认值**: 空（使用 TARGET_PROJECT_DIR）
+- **说明**: Qwen Code CLI 执行代码操作的目标项目目录
+- **使用场景**: 
+  - 当用户使用 `@qwen-cli` 命令时
+- **示例**: 
+  - Windows: `E:\IdeaProjects\my-project`
+  - Linux/Mac: `/home/user/projects/my-project`
+- **注意**: 
+  - 如果未配置，将使用 TARGET_PROJECT_DIR
+  - 需要安装 [Qwen Code CLI](https://qwenlm.github.io/qwen-code-docs/)
 
 #### TARGET_PROJECT_DIR
 - **类型**: 字符串（文件路径）
@@ -477,6 +492,7 @@ AI_TIMEOUT=1200
 | `@code` | Claude Code CLI | Claude 代码操作（推荐） | CLAUDE_CLI_TARGET_DIR |
 | `@claude-cli` | Claude Code CLI | 同上（显式指定） | CLAUDE_CLI_TARGET_DIR |
 | `@gemini-cli` | Gemini CLI | Gemini 代码操作 | GEMINI_CLI_TARGET_DIR |
+| `@qwen-cli` | Qwen Code CLI | Qwen 代码操作 | QWEN_CLI_TARGET_DIR |
 
 ### 使用技巧
 

@@ -136,6 +136,32 @@ export const configAPI = {
   }
 }
 
+export const providerAPI = {
+  // Get all provider configs
+  getProviders: () => apiClient.get('/providers'),
+  
+  // Get single provider config
+  getProvider: (name) => apiClient.get(`/providers/${name}`),
+  
+  // Create new provider config
+  createProvider: (data) => apiClient.post('/providers', data),
+  
+  // Update provider config
+  updateProvider: (name, data) => apiClient.put(`/providers/${name}`, data),
+  
+  // Delete provider config
+  deleteProvider: (name) => apiClient.delete(`/providers/${name}`),
+  
+  // Set default provider
+  setDefault: (name) => apiClient.post(`/providers/${name}/set-default`),
+  
+  // Get default provider
+  getDefault: () => apiClient.get('/providers/default'),
+  
+  // Test provider connection
+  testProvider: (name, model) => apiClient.post(`/providers/${name}/test`, { model })
+}
+
 export const sessionAPI = {
   // Get all sessions with optional filters
   getSessions: (params = {}) => apiClient.get('/sessions', { params }),

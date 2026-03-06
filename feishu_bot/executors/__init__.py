@@ -9,6 +9,7 @@ from .claude_cli_executor import ClaudeCodeCLIExecutor
 from .gemini_api_executor import GeminiAPIExecutor
 from .gemini_cli_executor import GeminiCLIExecutor
 from .openai_api_executor import OpenAIAPIExecutor
+from .qwen_cli_executor import QwenCLIExecutor
 
 __all__ = [
     'AIAPIExecutor',
@@ -18,4 +19,5 @@ __all__ = [
     'GeminiAPIExecutor',
     'GeminiCLIExecutor',
     'OpenAIAPIExecutor',
+    'QwenCLIExecutor',
 ]

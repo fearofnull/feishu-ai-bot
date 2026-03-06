@@ -20,6 +20,7 @@ class BotConfig:
     target_directory: str  # 通用目标目录（兼容旧配置）
     claude_cli_target_dir: Optional[str] = None  # Claude CLI 专用目录
     gemini_cli_target_dir: Optional[str] = None  # Gemini CLI 专用目录
+    qwen_cli_target_dir: Optional[str] = None    # Qwen Code CLI 专用目录
     ai_timeout: int = 600
     
     # 缓存配置
@@ -86,6 +87,7 @@ class BotConfig:
             # AI CLI 配置
             target_directory=os.getenv("TARGET_PROJECT_DIR", ""),
             ai_timeout=int(os.getenv("AI_TIMEOUT", "600")),
+            qwen_cli_target_dir=os.getenv("QWEN_CLI_TARGET_DIR"),
             
             # 缓存配置
             cache_size=int(os.getenv("CACHE_SIZE", "1000")),

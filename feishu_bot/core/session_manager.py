@@ -465,14 +465,16 @@ class SessionManager:
 
 🤖 **AI提供商命令 / AI Provider Commands**
 
-API层（快速响应）/ API Layer (Fast Response):
-  @claude 或 @claude-api - 使用 Claude API
-  @gemini 或 @gemini-api - 使用 Gemini API  
-  @openai 或 @gpt - 使用 OpenAI API
+统一API层（推荐）/ Unified API Layer (Recommended):
+  @gpt - 统一AI命令，使用管理员配置的默认提供商
+
+直接API调用 / Direct API Call:
+  @openai - 直接使用 OpenAI API
 
 CLI层（代码能力）/ CLI Layer (Code Capabilities):
   @code 或 @claude-cli - 使用 Claude Code CLI
   @gemini-cli - 使用 Gemini CLI
+  @qwen-cli - 使用 Qwen Code CLI
 
 💡 **智能路由 / Smart Routing**
   不使用前缀时，系统会自动选择最合适的AI服务
@@ -485,7 +487,7 @@ CLI层（代码能力）/ CLI Layer (Code Capabilities):
   /help 或 帮助 - 显示此帮助信息
 
 💬 **使用示例 / Examples**
-  @claude 什么是人工智能？
+  @gpt 什么是人工智能？
   @code 查看项目结构
   什么是Python？（自动路由）
   /new（开启新会话）

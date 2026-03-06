@@ -2,11 +2,18 @@
 消息处理器模块
 负责解析和处理飞书消息，包括文本消息和引用消息
 """
+import asyncio
 import json
 import logging
 import re
 from typing import Optional
-from lark_oapi.api.im.v1 import GetMessageRequest, GetMessageResponse
+from lark_oapi.api.im.v1 import (
+    GetMessageRequest, 
+    GetMessageResponse,
+    CreateMessageReactionRequest,
+    CreateMessageReactionRequestBody,
+    Emoji
+)
 from lark_oapi import Client as LarkClient
 
 from feishu_bot.utils.cache import DeduplicationCache
@@ -29,6 +36,53 @@ class MessageHandler:
         """
         self.client = client
         self.dedup_cache = dedup_cache
+    
+    def send_emoji_reaction_sync(self, message_id: str, emoji: str = "OK") -> bool:
+        """发送emoji反应（同步方法，参考飞书官方SDK示例和CoPaw项目实现）
+        
+        在接收到用户消息后立即发送emoji反应，让用户知道消息已被接收。
+        
+        Args:
+            message_id: 消息ID
+            emoji: emoji代码字符串，如 "EYES", "OK", "Typing" 等
+            
+        Returns:
+            是否成功发送
+            
+        Requirements: 需求1 - Emoji即时反馈
+        """
+        try:
+            # 构建请求 - 使用 Emoji builder
+            # 参考: https://github.com/larksuite/oapi-sdk-python/blob/main/samples/api/im/v1/create_message_reaction_sample.py
+            request = CreateMessageReactionRequest.builder() \
+                .message_id(message_id) \
+                .request_body(
+                    CreateMessageReactionRequestBody.builder()
+                    .reaction_type(
+                        Emoji.builder().emoji_type(emoji).build()
+                    )
+                    .build()
+                ) \
+                .build()
+            
+            # 直接同步调用（在线程中执行，无需async）
+            logger.debug(f"Sending emoji reaction '{emoji}' for message {message_id}")
+            response = self.client.im.v1.message_reaction.create(request)
+            
+            if not response.success():
+                logger.warning(
+                    f"Failed to send emoji reaction: code={response.code}, "
+                    f"msg={response.msg}, log_id={response.get_log_id()}, "
+                    f"emoji={emoji}, message_id={message_id}"
+                )
+                return False
+            
+            logger.info(f"Emoji reaction sent for message {message_id}")
+            return True
+            
+        except Exception as e:
+            logger.warning(f"Error sending emoji reaction: {e}")
+            return False
     
     def parse_message_content(self, message) -> str:
         """解析消息内容，提取文本内容

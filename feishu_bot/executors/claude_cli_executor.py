@@ -13,6 +13,7 @@ from typing import Optional, List, Dict, Any
 from filelock import FileLock
 from feishu_bot.executors.ai_cli_executor import AICLIExecutor
 from feishu_bot.models import ExecutionResult
+from feishu_bot.utils.git_sync import GitSyncModule
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,9 @@ class ClaudeCodeCLIExecutor(AICLIExecutor):
         self.use_native_session = use_native_session
         self.session_storage_path = session_storage_path
         self.session_map: Dict[str, Optional[str]] = {}  # user_id -> claude_session_id
+        
+        # 初始化Git同步模块（需求5：CLI层Git自动同步）
+        self.git_sync = GitSyncModule(enabled=True, timeout=30)
         
         # 加载会话映射
         self.load_session_mappings()
@@ -115,6 +119,11 @@ class ClaudeCodeCLIExecutor(AICLIExecutor):
         """
         args = [self.get_command_name()]
         
+        # 添加权限参数（需求2：CLI权限参数配置）
+        # 权限参数位于命令参数列表的开头，避免权限不足导致执行失败
+        args.append("--dangerously-skip-permissions")
+        logger.debug(f"Added permission parameter: --dangerously-skip-permissions")
+        
         # 添加目录上下文
         args.extend(["--add-dir", self.target_dir])
         
@@ -159,6 +168,15 @@ class ClaudeCodeCLIExecutor(AICLIExecutor):
         Returns:
             ExecutionResult: 执行结果
         """
+        # 执行Git同步（需求5：CLI层Git自动同步）
+        # 在CLI执行前自动拉取最新代码
+        logger.info(f"Syncing Git repository: {self.target_dir}")
+        sync_success, sync_output = self.git_sync.sync(self.target_dir)
+        if sync_success:
+            logger.debug(f"Git sync result: {sync_output}")
+        else:
+            logger.warning(f"Git sync failed but continuing: {sync_output}")
+        
         # 验证目录
         if not self.verify_directory():
             error_msg = f"目标目录不存在: {self.target_dir}"

@@ -1,8 +1,10 @@
 """
 飞书 AI 机器人主应用类
 """
+import asyncio
 import logging
 import json
+import threading
 from typing import Optional
 from lark_oapi import Client as LarkClient
 from lark_oapi.api.im.v1 import P2ImMessageReceiveV1
@@ -28,6 +30,7 @@ from .executors.openai_api_executor import OpenAIAPIExecutor
 # CLI Executors
 from .executors.claude_cli_executor import ClaudeCodeCLIExecutor
 from .executors.gemini_cli_executor import GeminiCLIExecutor
+from .executors.qwen_cli_executor import QwenCLIExecutor
 
 from .models import ExecutorMetadata
 
@@ -68,8 +71,22 @@ class FeishuBot:
         self.response_formatter = ResponseFormatter()
         self.message_sender = MessageSender(self.client)
         
+        # 初始化提供商配置管理器
+        from feishu_bot.core.provider_config_manager import ProviderConfigManager
+        self.provider_config_manager = ProviderConfigManager(
+            storage_path="./data/provider_configs.json"
+        )
+        
         # 初始化并注册执行器
         self._register_executors()
+        
+        # 初始化统一API接口
+        from feishu_bot.core.unified_api import UnifiedAPIInterface
+        self.unified_api_interface = UnifiedAPIInterface(
+            config_manager=self.provider_config_manager,
+            executor_registry=self.executor_registry,
+            enable_fallback=False  # 可以通过配置启用
+        )
         
         # 初始化智能路由器
         self.smart_router = SmartRouter(
@@ -77,7 +94,8 @@ class FeishuBot:
             default_provider=config.default_provider,
             default_layer=config.default_layer,
             default_cli_provider=config.default_cli_provider,
-            use_ai_intent_classification=config.use_ai_intent_classification
+            use_ai_intent_classification=config.use_ai_intent_classification,
+            unified_api_interface=self.unified_api_interface
         )
         
         # 初始化事件处理器和 WebSocket 客户端
@@ -110,7 +128,7 @@ class FeishuBot:
                     version="1.0.0",
                     description="Anthropic Claude API for general Q&A",
                     capabilities=["general_qa", "text_generation", "analysis"],
-                    command_prefixes=["@claude-api", "@claude"],
+                    command_prefixes=["@claude-api"],
                     priority=1,
                     config_required=["api_key"]
                 )
@@ -135,7 +153,7 @@ class FeishuBot:
                     version="1.0.0",
                     description="Google Gemini API for general Q&A",
                     capabilities=["general_qa", "text_generation", "analysis"],
-                    command_prefixes=["@gemini-api", "@gemini"],
+                    command_prefixes=["@gemini-api"],
                     priority=2,
                     config_required=["api_key"]
                 )
@@ -228,6 +246,34 @@ class FeishuBot:
                 logger.info(f"Registered Gemini CLI executor (target: {gemini_cli_dir})")
             except Exception as e:
                 logger.warning(f"Failed to register Gemini CLI executor: {e}")
+        
+        # 注册 Qwen Code CLI 执行器
+        qwen_cli_dir = self.config.qwen_cli_target_dir or self.config.target_directory
+        if qwen_cli_dir:
+            try:
+                qwen_cli = QwenCLIExecutor(
+                    target_dir=qwen_cli_dir,
+                    timeout=self.config.ai_timeout,
+                    use_native_session=True,
+                    session_storage_path=self.config.session_storage_path
+                )
+                qwen_cli_metadata = ExecutorMetadata(
+                    name="Qwen Code CLI",
+                    provider="qwen",
+                    layer="cli",
+                    version="1.0.0",
+                    description="Qwen Code CLI for code analysis and operations",
+                    capabilities=["code_analysis", "file_operations", "command_execution"],
+                    command_prefixes=["@qwen-cli"],
+                    priority=3,
+                    config_required=["target_directory"]
+                )
+                self.executor_registry.register_cli_executor(
+                    "qwen", qwen_cli, qwen_cli_metadata
+                )
+                logger.info(f"Registered Qwen Code CLI executor (target: {qwen_cli_dir})")
+            except Exception as e:
+                logger.warning(f"Failed to register Qwen Code CLI executor: {e}")
     
     def _handle_message_receive(self, data: P2ImMessageReceiveV1) -> None:
         """处理接收到的消息
@@ -242,6 +288,13 @@ class FeishuBot:
             sender_id = data.event.sender.sender_id.user_id
             
             logger.info(f"Received message {message_id} from user {sender_id}")
+            
+            # 0. 立即发送emoji反应（在线程中异步执行，不阻塞后续消息处理）
+            threading.Thread(
+                target=self._send_emoji_in_thread,
+                args=(message_id,),
+                daemon=True
+            ).start()
             
             # 1. 消息去重
             if self.dedup_cache.is_processed(message_id):
@@ -372,20 +425,26 @@ class FeishuBot:
                 )
                 
                 # 获取执行器元数据
-                provider_name = executor.get_provider_name()  # e.g., "openai-api", "claude-cli"
+                provider_name = executor.get_provider_name()  # e.g., "openai-api", "claude-cli", "unified-api"
                 
-                # 解析 provider 和 layer
-                if "-" in provider_name:
-                    parts = provider_name.rsplit("-", 1)  # 从右边分割一次
-                    provider = parts[0]  # e.g., "openai", "claude"
-                    layer = parts[1]     # e.g., "api", "cli"
+                # 特殊处理 unified-api：不在 registry 中注册，直接使用名称
+                if provider_name == "unified-api":
+                    executor_metadata = None
+                    executor_name_override = "Unified API (@gpt)"
                 else:
-                    # 兜底：如果没有连字符，假设是 API
-                    provider = provider_name
-                    layer = "api"
-                
-                executor_metadata = self.executor_registry.get_executor_metadata(provider, layer)
-                executor_name = executor_metadata.name if executor_metadata else None
+                    # 解析 provider 和 layer
+                    if "-" in provider_name:
+                        parts = provider_name.rsplit("-", 1)  # 从右边分割一次
+                        provider = parts[0]  # e.g., "openai", "claude"
+                        layer = parts[1]     # e.g., "api", "cli"
+                    else:
+                        # 兜底：如果没有连字符，假设是 API
+                        provider = provider_name
+                        layer = "api"
+                    
+                    executor_metadata = self.executor_registry.get_executor_metadata(provider, layer)
+                    executor_name_override = None
+                executor_name = executor_name_override or (executor_metadata.name if executor_metadata else None)
                 
                 # 添加语言指令（使用有效配置中的语言设置）
                 message_with_language = self._prepend_language_instruction(
@@ -471,6 +530,13 @@ class FeishuBot:
                 )
             except:
                 pass
+    
+    def _send_emoji_in_thread(self, message_id: str) -> None:
+        """在线程中发送emoji反应"""
+        try:
+            self.message_handler.send_emoji_reaction_sync(message_id)
+        except Exception as e:
+            logger.warning(f"Failed to send emoji reaction in thread: {e}")
     
     def _is_bot_mentioned(self, message) -> bool:
         """检测消息中是否@了机器人
@@ -590,7 +656,7 @@ class FeishuBot:
         # 如果是新会话命令，额外清除 CLI 会话
         message_lower = message.lower().strip()
         if message_lower in [cmd.lower() for cmd in self.session_manager.NEW_SESSION_COMMANDS]:
-            for provider in ["claude", "gemini"]:
+            for provider in ["claude", "gemini", "qwen"]:
                 try:
                     cli_executor = self.executor_registry.get_executor(provider, "cli")
                     if hasattr(cli_executor, 'clear_session'):

@@ -37,6 +37,15 @@
           <el-icon><Tools /></el-icon>
           <span>全局配置</span>
         </router-link>
+        
+        <router-link 
+          to="/providers" 
+          class="nav-link"
+          active-class="nav-link-active"
+        >
+          <el-icon><Connection /></el-icon>
+          <span>提供商配置</span>
+        </router-link>
       </div>
 
       <!-- Logout Button -->
@@ -60,7 +69,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
-import { Setting, List, Tools, SwitchButton, ChatDotRound } from '@element-plus/icons-vue'
+import { Setting, List, Tools, SwitchButton, ChatDotRound, Connection } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

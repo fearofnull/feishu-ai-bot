@@ -19,20 +19,17 @@ class CommandParser:
     
     # AI 提供商前缀映射：前缀 -> (provider, layer)
     PREFIX_MAPPING = {
-        # Claude API
-        "@claude-api": ("claude", "api"),
-        "@claude": ("claude", "api"),
-        # Gemini API
-        "@gemini-api": ("gemini", "api"),
-        "@gemini": ("gemini", "api"),
-        # OpenAI API
+        # Unified API (routes through UnifiedAPIInterface) - 统一API入口
+        "@gpt": ("unified", "api"),
+        # OpenAI API (直接调用，保留向后兼容)
         "@openai": ("openai", "api"),
-        "@gpt": ("openai", "api"),
         # Claude CLI
         "@claude-cli": ("claude", "cli"),
         "@code": ("claude", "cli"),
         # Gemini CLI
         "@gemini-cli": ("gemini", "cli"),
+        # Qwen Code CLI
+        "@qwen-cli": ("qwen", "cli"),
     }
     
     # CLI 关键词（中英文）

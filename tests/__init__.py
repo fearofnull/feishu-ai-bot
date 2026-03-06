@@ -1,3 +1,1 @@
-"""
-Tests package for Feishu AI Bot
-"""
+# Tests package

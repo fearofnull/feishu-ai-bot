@@ -14,6 +14,7 @@ from flask_cors import CORS
 from feishu_bot.core.config_manager import ConfigManager
 from feishu_bot.web_admin.auth import AuthManager
 from feishu_bot.web_admin.api_routes import register_api_routes
+from feishu_bot.web_admin.provider_api_routes import register_provider_api_routes
 from feishu_bot.web_admin.logging_config import configure_logging
 from feishu_bot.web_admin.rate_limiter import create_limiter, configure_rate_limits, handle_rate_limit_exceeded
 from feishu_bot.web_admin.compression import configure_compression
@@ -95,10 +96,24 @@ class WebAdminServer:
             admin_password=admin_password or os.environ.get("WEB_ADMIN_PASSWORD", "admin123")
         )
         
+        # Initialize provider config manager
+        from feishu_bot.core.provider_config_manager import ProviderConfigManager
+        self.provider_config_manager = ProviderConfigManager(
+            storage_path="./data/provider_configs.json"
+        )
+        
         # Register API routes (pass rate_limits if available)
         register_api_routes(
             self.app, 
             self.config_manager, 
+            self.auth_manager,
+            rate_limits=self.rate_limits
+        )
+        
+        # Register provider API routes
+        register_provider_api_routes(
+            self.app,
+            self.provider_config_manager,
             self.auth_manager,
             rate_limits=self.rate_limits
         )
