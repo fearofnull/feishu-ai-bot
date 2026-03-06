@@ -111,22 +111,6 @@
             </div>
           </el-descriptions-item>
 
-          <!-- Default Provider -->
-          <el-descriptions-item>
-            <template #label>
-              <div class="label-content">
-                <el-icon><Connection /></el-icon>
-                <span>默认提供商</span>
-              </div>
-            </template>
-            <div class="value-content">
-              <el-tag :type="getProviderTagType(globalConfig.default_provider)" effect="plain" size="large">
-                {{ globalConfig.default_provider || '未设置' }}
-              </el-tag>
-              <span class="field-description">AI 服务的默认提供商 (claude/gemini/openai)</span>
-            </div>
-          </el-descriptions-item>
-
           <!-- Default Layer -->
           <el-descriptions-item>
             <template #label>
@@ -202,21 +186,6 @@
             <div class="form-item-tip">Bot 回复消息使用的默认语言</div>
           </el-form-item>
 
-          <!-- Default Provider -->
-          <el-form-item label="默认提供商">
-            <el-select 
-              v-model="editForm.default_provider" 
-              placeholder="选择提供商"
-              clearable
-              style="width: 100%"
-            >
-              <el-option label="Claude" value="claude" />
-              <el-option label="Gemini" value="gemini" />
-              <el-option label="OpenAI" value="openai" />
-            </el-select>
-            <div class="form-item-tip">AI 服务的默认提供商</div>
-          </el-form-item>
-
           <!-- Default Layer -->
           <el-form-item label="默认层级">
             <el-select 
@@ -275,7 +244,6 @@ import {
   Setting, 
   Folder, 
   ChatDotRound, 
-  Connection, 
   Operation, 
   Monitor,
   Edit,
@@ -293,7 +261,6 @@ const saving = ref(false)
 const editForm = ref({
   target_project_dir: '',
   response_language: '',
-  default_provider: '',
   default_layer: '',
   default_cli_provider: ''
 })
@@ -320,7 +287,6 @@ const startEdit = () => {
   editForm.value = {
     target_project_dir: globalConfig.value.target_project_dir || '',
     response_language: globalConfig.value.response_language || '',
-    default_provider: globalConfig.value.default_provider || '',
     default_layer: globalConfig.value.default_layer || '',
     default_cli_provider: globalConfig.value.default_cli_provider || ''
   }
@@ -333,7 +299,6 @@ const cancelEdit = () => {
   editForm.value = {
     target_project_dir: '',
     response_language: '',
-    default_provider: '',
     default_layer: '',
     default_cli_provider: ''
   }
@@ -348,7 +313,6 @@ const saveConfig = async () => {
     const data = {
       target_project_dir: editForm.value.target_project_dir || null,
       response_language: editForm.value.response_language || null,
-      default_provider: editForm.value.default_provider || null,
       default_layer: editForm.value.default_layer || null,
       default_cli_provider: editForm.value.default_cli_provider || null
     }
@@ -367,16 +331,6 @@ const saveConfig = async () => {
   } finally {
     saving.value = false
   }
-}
-
-// Get tag type for provider
-const getProviderTagType = (provider) => {
-  const typeMap = {
-    'claude': 'primary',
-    'gemini': 'success',
-    'openai': 'warning'
-  }
-  return typeMap[provider] || 'info'
 }
 
 // Load config on mount
