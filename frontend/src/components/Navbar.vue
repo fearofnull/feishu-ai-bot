@@ -12,21 +12,12 @@
       <!-- Navigation Links -->
       <div class="navbar-nav">
         <router-link 
-          to="/configs" 
+          to="/providers" 
           class="nav-link"
           active-class="nav-link-active"
         >
-          <el-icon><List /></el-icon>
-          <span>配置列表</span>
-        </router-link>
-        
-        <router-link 
-          to="/sessions" 
-          class="nav-link"
-          active-class="nav-link-active"
-        >
-          <el-icon><ChatDotRound /></el-icon>
-          <span>会话记录</span>
+          <el-icon><Connection /></el-icon>
+          <span>提供商配置</span>
         </router-link>
         
         <router-link 
@@ -39,12 +30,21 @@
         </router-link>
         
         <router-link 
-          to="/providers" 
+          to="/sessions" 
           class="nav-link"
           active-class="nav-link-active"
         >
-          <el-icon><Connection /></el-icon>
-          <span>提供商配置</span>
+          <el-icon><ChatDotRound /></el-icon>
+          <span>会话记录</span>
+        </router-link>
+        
+        <router-link 
+          to="/configs" 
+          class="nav-link"
+          active-class="nav-link-active"
+        >
+          <el-icon><List /></el-icon>
+          <span>会话配置列表</span>
         </router-link>
       </div>
 
