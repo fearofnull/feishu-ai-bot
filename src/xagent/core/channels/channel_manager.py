@@ -87,7 +87,8 @@ class ChannelManager:
         mode: str = "final",
         chat_id: Optional[str] = None,
         user_id: Optional[str] = None,
-        message_id: Optional[str] = None
+        message_id: Optional[str] = None,
+        msg_type: str = "post"
     ) -> bool:
         """Send a message through a specific channel.
         
@@ -102,6 +103,7 @@ class ChannelManager:
             chat_id: Chat ID (preferred, works for both private and group chats)
             user_id: User ID (open_id, used as fallback when chat_id is not available)
             message_id: Message ID for reply (optional)
+            msg_type: Message type ("text", "post")
             
         Returns:
             True if the message was sent successfully, False otherwise.
@@ -155,7 +157,8 @@ class ChannelManager:
                 receive_id=receive_id,
                 receive_id_type=receive_id_type,
                 content=content,
-                message_id=message_id
+                message_id=message_id,
+                msg_type=msg_type
             )
         except ValueError as e:
             # Invalid parameters

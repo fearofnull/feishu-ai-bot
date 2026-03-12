@@ -110,7 +110,8 @@ class CronExecutor:
         chat_id: Optional[str],
         user_id: Optional[str],
         content: str, 
-        mode: str
+        mode: str,
+        msg_type: str = "post"
     ) -> None:
         """发送消息到频道
 
@@ -120,6 +121,7 @@ class CronExecutor:
             user_id: 用户 ID (当 chat_id 为空时使用)
             content: 消息内容
             mode: 发送模式
+            msg_type: 消息类型 ("text", "post")
         """
         if self._channel_manager:
             try:
@@ -128,7 +130,8 @@ class CronExecutor:
                     chat_id=chat_id,
                     user_id=user_id,
                     content=content,
-                    mode=mode
+                    mode=mode,
+                    msg_type=msg_type
                 )
             except Exception as e:
                 # 记录错误但不中断执行

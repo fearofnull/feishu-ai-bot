@@ -31,7 +31,8 @@ class Channel(ABC):
         receive_id: str,
         receive_id_type: str,
         content: str,
-        message_id: Optional[str] = None
+        message_id: Optional[str] = None,
+        msg_type: str = "post"
     ) -> bool:
         """Send a message through this channel.
         
@@ -52,6 +53,8 @@ class Channel(ABC):
             message_id: Optional message ID for replying to a specific message.
                 If provided, the platform should send this as a reply/thread
                 message. If None, sends as a new message.
+            msg_type: Message type. Supported values:
+                "text", "post"
         
         Returns:
             bool: True if the message was sent successfully, False if the

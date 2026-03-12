@@ -38,9 +38,9 @@ class AgentExecutor(AIAPIExecutor):
         """
         # 从提供商配置中获取配置
         provider_api_key = ""
-        provider_model = "gpt-4o"
+        provider_model = ""  # 不硬编码默认模型，让 model_factory 根据提供商类型决定
         provider_base_url = None
-        provider_type = "openai"
+        provider_type = ""  # 不硬编码默认类型
         
         if provider_config_manager:
             default_config = provider_config_manager.get_default()
@@ -50,18 +50,13 @@ class AgentExecutor(AIAPIExecutor):
                 provider_type = default_config.type
                 provider_base_url = default_config.base_url
         
-        # 处理提供商类型
-        normalized_provider_type = "openai"
-        if provider_type == "openai_compatible":
-            normalized_provider_type = "openai"
-        elif provider_type == "claude_compatible":
-            normalized_provider_type = "claude"
-        elif provider_type == "gemini_compatible":
-            normalized_provider_type = "gemini"
+        # 规范化提供商类型
+        # 支持 xxx_compatible 格式和直接的 xxx 格式
+        normalized_provider_type = self._normalize_provider_type(provider_type)
         
         super().__init__(provider_api_key, provider_model, timeout)
         
-        # 设置环境变量
+        # 设置环境变量（用于 model_factory）
         if provider_api_key:
             if normalized_provider_type == "openai":
                 os.environ["OPENAI_API_KEY"] = provider_api_key
@@ -173,6 +168,7 @@ class AgentExecutor(AIAPIExecutor):
             ))
             
             # 运行异步 Agent
+            logger.info(f"[execute] 准备调用 agent.reply，agent 类型: {type(self.agent)}")
             try:
                 # 检查是否已经有运行中的事件循环
                 loop = asyncio.get_event_loop()
@@ -191,23 +187,219 @@ class AgentExecutor(AIAPIExecutor):
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     result = executor.submit(asyncio.run, self.agent.reply(messages)).result()
             
+            logger.info(f"[execute] agent.reply 返回，result 类型: {type(result)}, result.content: {result.content}")
+            
             # 提取回复内容
+            text_parts = []
+            media_blocks = []
+            
+            # 检查 content 字段
             if hasattr(result, "content"):
                 if isinstance(result.content, str):
-                    output = result.content
+                    text_parts.append(result.content)
                 elif isinstance(result.content, list):
-                    # 处理content是列表的情况，提取文本内容
-                    text_parts = []
+                    # 处理content是列表的情况，提取文本内容和媒体内容
                     for item in result.content:
-                        if isinstance(item, dict) and item.get("type") == "text" and "text" in item:
-                            text_parts.append(item["text"])
-                        elif hasattr(item, "text"):
-                            text_parts.append(str(item.text))
-                    output = "".join(text_parts) if text_parts else str(result.content)
+                        if isinstance(item, dict):
+                            # 处理 tool_result 结构
+                            if item.get("type") == "tool_result" and "output" in item:
+                                logger.info(f"检测到 tool_result: {item}")
+                                tool_output = item.get("output")
+                                if isinstance(tool_output, list):
+                                    for tool_item in tool_output:
+                                        if isinstance(tool_item, dict):
+                                            if tool_item.get("type") == "text" and "text" in tool_item:
+                                                text_parts.append(tool_item["text"])
+                                            elif tool_item.get("type") in ["image", "audio", "video", "file"] and "source" in tool_item:
+                                                media_blocks.append(tool_item)
+                                # 检查 tool_output 是否直接是一个对象（而不是列表）
+                                elif isinstance(tool_output, dict):
+                                    if tool_output.get("type") == "text" and "text" in tool_output:
+                                        text_parts.append(tool_output["text"])
+                                    elif tool_output.get("type") in ["image", "audio", "video", "file"] and "source" in tool_output:
+                                        media_blocks.append(tool_output)
+                            elif item.get("type") == "text" and "text" in item:
+                                text_parts.append(item["text"])
+                            elif item.get("type") in ["image", "audio", "video", "file"]:
+                                # 媒体块可能是 dict 或对象
+                                media_blocks.append(item)
+                                logger.info(f"检测到媒体块(dict): {item.get('type')}")
+                        elif hasattr(item, "type"):
+                            # 注意：ImageBlock 和 TextBlock 实际上是 TypedDict，创建后是 dict 对象
+                            # 这里处理的是真正的对象类型（如果有的话）
+                            item_type = getattr(item, "type", None)
+                            if item_type == "text" and hasattr(item, "text"):
+                                text_parts.append(str(item.text))
+                            elif item_type in ["image", "audio", "video", "file"]:
+                                # 将对象转换为 dict
+                                if hasattr(item, "source"):
+                                    source = getattr(item, "source", {})
+                                    if isinstance(source, dict):
+                                        media_blocks.append({
+                                            "type": item_type,
+                                            "source": source
+                                        })
+                                        logger.info(f"检测到媒体块(对象): {item_type}")
+                                    else:
+                                        # 处理 source 是对象的情况
+                                        media_blocks.append({
+                                            "type": item_type,
+                                            "source": {
+                                                "type": getattr(source, "type", "url"),
+                                                "url": getattr(source, "url", "")
+                                            }
+                                        })
+                                        logger.info(f"检测到媒体块(对象source): {item_type}")
                 else:
-                    output = str(result.content)
+                    text_parts.append(str(result.content))
+            
+            # 检查 system 字段（处理工具结果）
+            if hasattr(result, "system"):
+                system_content = result.system
+                logger.info(f"检测到 system 字段: {system_content}")
+                
+                if isinstance(system_content, dict):
+                    # 处理 system 中的 tool_result
+                    if system_content.get("type") == "tool_result" and "output" in system_content:
+                        logger.info(f"检测到 system 中的 tool_result: {system_content}")
+                        tool_output = system_content.get("output")
+                        if isinstance(tool_output, list):
+                            for tool_item in tool_output:
+                                if isinstance(tool_item, dict):
+                                    if tool_item.get("type") == "text" and "text" in tool_item:
+                                        text_parts.append(tool_item["text"])
+                                    elif tool_item.get("type") in ["image", "audio", "video", "file"] and "source" in tool_item:
+                                        media_blocks.append(tool_item)
+                        # 检查 tool_output 是否直接是一个对象（而不是列表）
+                        elif isinstance(tool_output, dict):
+                            if tool_output.get("type") == "text" and "text" in tool_output:
+                                text_parts.append(tool_output["text"])
+                            elif tool_output.get("type") in ["image", "audio", "video", "file"] and "source" in tool_output:
+                                media_blocks.append(tool_output)
+                elif isinstance(system_content, list):
+                    # 处理 system 是列表的情况
+                    for item in system_content:
+                        if isinstance(item, dict):
+                            if item.get("type") == "tool_result" and "output" in item:
+                                logger.info(f"检测到 system 列表中的 tool_result: {item}")
+                                tool_output = item.get("output")
+                                if isinstance(tool_output, list):
+                                    for tool_item in tool_output:
+                                        if isinstance(tool_item, dict):
+                                            if tool_item.get("type") == "text" and "text" in tool_item:
+                                                text_parts.append(tool_item["text"])
+                                            elif tool_item.get("type") in ["image", "audio", "video", "file"] and "source" in tool_item:
+                                                media_blocks.append(tool_item)
+                                elif isinstance(tool_output, dict):
+                                    if tool_output.get("type") == "text" and "text" in tool_output:
+                                        text_parts.append(tool_output["text"])
+                                    elif tool_output.get("type") in ["image", "audio", "video", "file"] and "source" in tool_output:
+                                        media_blocks.append(tool_output)
+            
+            # 生成输出文本
+            # 如果有文本部分，拼接它们；如果没有文本但有媒体块，使用空字符串；否则尝试从 result 获取内容
+            if text_parts:
+                output = "".join(text_parts)
+            elif media_blocks:
+                # 有媒体块时不需要额外文本
+                output = ""
+            elif hasattr(result, 'content') and isinstance(result.content, str) and result.content:
+                output = result.content
             else:
-                output = str(result)
+                # 最后的回退：不输出 Msg 对象的字符串表示
+                output = ""
+            
+            # 处理媒体块，发送图片或文件
+            logger.info(f"检测到媒体块数量: {len(media_blocks)}")
+            if media_blocks:
+                logger.info(f"媒体块内容: {media_blocks}")
+                try:
+                    from src.xagent.core.message_sender import MessageSender
+                    from lark_oapi import Client as LarkClient
+                    import os
+                    
+                    # 加载环境变量
+                    def load_env():
+                        env_path = os.path.join(os.path.dirname(__file__), '../../..', '.env')
+                        config = {}
+                        if os.path.exists(env_path):
+                            with open(env_path, 'r', encoding='utf-8') as f:
+                                for line in f:
+                                    line = line.strip()
+                                    if line and not line.startswith('#'):
+                                        key, value = line.split('=', 1)
+                                        config[key.strip()] = value.strip()
+                        return config
+                    
+                    config = load_env()
+                    app_id = config.get('FEISHU_APP_ID')
+                    app_secret = config.get('FEISHU_APP_SECRET')
+                    chat_id = config.get('FEISHU_CHAT_ID')
+                    
+                    logger.info(f"环境变量加载结果: app_id={app_id is not None}, app_secret={app_secret is not None}, chat_id={chat_id is not None}")
+                    
+                    if app_id and app_secret and chat_id:
+                        client = LarkClient.builder().app_id(app_id).app_secret(app_secret).build()
+                        message_sender = MessageSender(client)
+                        
+                        for media_block in media_blocks:
+                            media_type = media_block.get("type") if isinstance(media_block, dict) else getattr(media_block, "type")
+                            source = media_block.get("source") if isinstance(media_block, dict) else getattr(media_block, "source")
+                            
+                            logger.info(f"处理媒体块: type={media_type}, source={source}")
+                            
+                            if source:
+                                media_url = source.get("url") if isinstance(source, dict) else getattr(source, "url")
+                                logger.info(f"媒体URL: {media_url}")
+                                
+                                # 处理文件路径
+                                file_path = None
+                                if media_url:
+                                    if media_url.startswith("file://"):
+                                        # 从 file:// URL 提取文件路径
+                                        file_path = media_url.replace("file://", "")
+                                        # 处理 Windows 路径中的双反斜杠
+                                        file_path = file_path.replace("\\\\", "\\")
+                                        logger.info(f"从 file:// URL 提取文件路径: {file_path}")
+                                    else:
+                                        # 直接使用路径
+                                        file_path = media_url
+                                        logger.info(f"直接使用文件路径: {file_path}")
+                                else:
+                                    # 尝试直接获取 source 作为路径
+                                    file_path = source if isinstance(source, str) else str(source)
+                                    logger.info(f"尝试使用 source 作为文件路径: {file_path}")
+                                
+                                if file_path and os.path.exists(file_path):
+                                    logger.info(f"文件存在，发送 {media_type} 消息")
+                                    if media_type == "image":
+                                        success = message_sender.send_message(
+                                            chat_type="p2p",
+                                            chat_id=chat_id,
+                                            message_id="",
+                                            content=file_path,
+                                            msg_type="image"
+                                        )
+                                        logger.info(f"图片消息发送结果: {success}")
+                                    elif media_type == "file":
+                                        success = message_sender.send_message(
+                                            chat_type="p2p",
+                                            chat_id=chat_id,
+                                            message_id="",
+                                            content=file_path,
+                                            msg_type="file"
+                                        )
+                                        logger.info(f"文件消息发送结果: {success}")
+                                else:
+                                    logger.error(f"文件不存在或路径无效: {file_path}")
+                            else:
+                                logger.error("媒体块缺少source")
+                    else:
+                        logger.error("缺少必要的环境变量")
+                except Exception as e:
+                    logger.error(f"发送媒体文件失败: {e}", exc_info=True)
+            else:
+                logger.info("没有检测到媒体块")
             
             return ExecutionResult(
                 success=True,
@@ -265,6 +457,43 @@ class AgentExecutor(AIAPIExecutor):
             return self.memory_manager.get_memory_stats()
         else:
             return {"error": "Memory manager not available"}
+
+    @staticmethod
+    def _normalize_provider_type(provider_type: str) -> str:
+        """规范化提供商类型
+        
+        将各种格式的提供商类型转换为标准格式（openai, claude, gemini）
+        
+        Args:
+            provider_type: 原始提供商类型，支持:
+                - openai, openai_compatible
+                - claude, claude_compatible
+                - gemini, gemini_compatible
+                
+        Returns:
+            规范化后的提供商类型（openai, claude, gemini）
+            如果无法识别，默认返回 openai
+        """
+        if not provider_type:
+            return "openai"
+        
+        provider_type_lower = provider_type.lower().strip()
+        
+        # 映射表
+        type_mapping = {
+            "openai": "openai",
+            "openai_compatible": "openai",
+            "claude": "claude",
+            "claude_compatible": "claude",
+            "anthropic": "claude",
+            "anthropic_compatible": "claude",
+            "gemini": "gemini",
+            "gemini_compatible": "gemini",
+            "google": "gemini",
+            "google_compatible": "gemini",
+        }
+        
+        return type_mapping.get(provider_type_lower, "openai")
 
     def is_available(self) -> bool:
         """检查执行器是否可用

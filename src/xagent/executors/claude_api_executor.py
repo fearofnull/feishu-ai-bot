@@ -112,6 +112,7 @@ class ClaudeAPIExecutor(AIAPIExecutor):
             request_params = {
                 "model": self.model,
                 "messages": messages,
+                "max_tokens": 100000,  # 设置默认值，根据 Claude API 要求
             }
             
             # 添加可选参数

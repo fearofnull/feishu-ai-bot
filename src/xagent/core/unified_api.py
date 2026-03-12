@@ -161,9 +161,9 @@ class UnifiedAPIInterface(AIExecutor):
         """根据配置获取执行器
         
         根据配置的type字段选择对应的执行器：
-        - openai_compatible: 使用OpenAI兼容执行器
-        - claude_compatible: 使用Claude执行器
-        - gemini_compatible: 使用Gemini执行器
+        - openai, openai_compatible: 使用OpenAI兼容执行器
+        - claude, claude_compatible: 使用Claude执行器
+        - gemini, gemini_compatible: 使用Gemini执行器
         
         Args:
             config: 提供商配置
@@ -174,7 +174,10 @@ class UnifiedAPIInterface(AIExecutor):
         Raises:
             ExecutorNotAvailableError: 如果配置类型不支持或执行器不可用
         """
-        if config.type == "openai_compatible":
+        # 规范化配置类型
+        config_type = (config.type or "").lower().strip()
+        
+        if config_type in ("openai", "openai_compatible"):
             # 使用执行器注册表创建OpenAI兼容执行器
             return self.executor_registry.get_openai_executor(
                 base_url=config.base_url,
@@ -182,7 +185,7 @@ class UnifiedAPIInterface(AIExecutor):
                 model=config.default_model
             )
         
-        elif config.type == "claude_compatible":
+        elif config_type in ("claude", "claude_compatible", "anthropic", "anthropic_compatible"):
             # 使用Claude执行器
             from ..executors.claude_api_executor import ClaudeAPIExecutor
             return ClaudeAPIExecutor(
@@ -191,7 +194,7 @@ class UnifiedAPIInterface(AIExecutor):
                 base_url=config.base_url
             )
         
-        elif config.type == "gemini_compatible":
+        elif config_type in ("gemini", "gemini_compatible", "google", "google_compatible"):
             # 使用Gemini执行器
             from ..executors.gemini_api_executor import GeminiAPIExecutor
             return GeminiAPIExecutor(

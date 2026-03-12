@@ -3,6 +3,7 @@
 # pylint: disable=line-too-long,too-many-return-statements
 import os
 import mimetypes
+import logging
 
 from agentscope.tool import ToolResponse
 from agentscope.message import (
@@ -13,6 +14,8 @@ from agentscope.message import (
 )
 
 from ..schema import FileBlock
+
+logger = logging.getLogger(__name__)
 
 
 def _auto_as_type(mt: str) -> str:
@@ -38,6 +41,8 @@ async def send_file_to_user(
         `ToolResponse`:
             The tool response containing the file or an error message.
     """
+    # 记录传入的文件路径参数
+    logger.info(f"[send_file_to_user] 收到文件路径参数: {file_path}")
 
     if not os.path.exists(file_path):
         return ToolResponse(
@@ -101,8 +106,14 @@ async def send_file_to_user(
                 ],
             )
 
+        # 普通文件（非图片/音频/视频）
         return ToolResponse(
             content=[
+                FileBlock(
+                    type="file",
+                    source=source,
+                    filename=os.path.basename(file_path),
+                ),
                 TextBlock(type="text", text=f"已成功发送文件: {os.path.basename(file_path)}"),
             ],
         )

@@ -525,10 +525,12 @@ class XAgent:
                         message_content, result.error_message or result.stderr, executor_name=executor_name
                     )
                 
-                # 12. 消息发送
-                self.message_sender.send_message(
-                    chat_type, chat_id, message_id, response
-                )
+                # 12. 消息发送（仅当有内容时发送）
+                # Agent executor 可能已经单独发送了媒体文件，此时 stdout 为空
+                if result.stdout or not result.success:
+                    self.message_sender.send_message(
+                        chat_type, chat_id, message_id, response
+                    )
                 
                 # 13. 会话历史更新
                 self.session_manager.add_message(sender_id, "user", parsed_command.message)

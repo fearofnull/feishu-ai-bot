@@ -45,7 +45,8 @@ class FeishuChannel(Channel):
         receive_id: str,
         receive_id_type: str,
         content: str,
-        message_id: Optional[str] = None
+        message_id: Optional[str] = None,
+        msg_type: str = "post"
     ) -> bool:
         """Send message via MessageSender.
         
@@ -58,6 +59,7 @@ class FeishuChannel(Channel):
             receive_id_type: ID type ("chat_id", "open_id", "user_id", "union_id")
             content: Message content
             message_id: Message ID for reply (optional)
+            msg_type: Message type ("text", "post")
             
         Returns:
             True if sent successfully, False otherwise
@@ -65,13 +67,14 @@ class FeishuChannel(Channel):
         try:
             if message_id:
                 # Reply to message
-                result = self.message_sender.reply_message(message_id, content)
+                result = self.message_sender.reply_message(message_id, content, msg_type=msg_type)
             else:
                 # Send new message with specified ID type
                 result = self.message_sender.send_new_message(
                     receive_id=receive_id,
                     content=content,
-                    receive_id_type=receive_id_type
+                    receive_id_type=receive_id_type,
+                    msg_type=msg_type
                 )
             
             # Check if the result is a coroutine (async method)

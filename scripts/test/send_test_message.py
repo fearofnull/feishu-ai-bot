@@ -27,9 +27,18 @@ APP_SECRET = FEISHU_APP_SECRET
 
 client = lark.Client.builder().app_id(APP_ID).app_secret(APP_SECRET).build()
 
-def send_message(chat_id: str, message: str):
+def send_message(chat_id: str, message: str, msg_type: str = "text"):
     """发送消息到指定聊天"""
-    content = json.dumps({"text": message})
+    if msg_type == "post":
+        # 构建 post 格式内容
+        post_content = {
+            "zh_cn": {
+                "content": [[{"tag": "md", "text": message}]]
+            }
+        }
+        content = json.dumps(post_content, ensure_ascii=False)
+    else:
+        content = json.dumps({"text": message})
     
     request = (
         CreateMessageRequest.builder()
@@ -37,7 +46,7 @@ def send_message(chat_id: str, message: str):
         .request_body(
             CreateMessageRequestBody.builder()
             .receive_id(chat_id)
-            .msg_type("text")
+            .msg_type(msg_type)
             .content(content)
             .build()
         )
@@ -60,18 +69,20 @@ if __name__ == "__main__":
         # 没有任何参数，使用配置文件中的chat_id和默认消息
         if FEISHU_CHAT_ID:
             chat_id = FEISHU_CHAT_ID
-            message = "测试消息：这是一条自动化测试消息"
+            message = "测试消息：这是一条自动化测试消息\n\n**粗体文本**\n- 列表项1\n- 列表项2"
+            msg_type = "post"
             print(f"使用配置文件中的 chat_id: {chat_id}")
+            print(f"使用消息类型: {msg_type}")
         else:
             print("使用方法：")
-            print("  python send_test_message.py <chat_id> [message]")
+            print("  python send_test_message.py <chat_id> [message] [msg_type]")
             print()
             print("或者在 .env 文件中配置 FEISHU_CHAT_ID，然后：")
-            print("  python send_test_message.py [message]")
+            print("  python send_test_message.py [message] [msg_type]")
             print()
             print("示例：")
-            print("  python send_test_message.py oc_xxxxx \"测试消息\"")
-            print("  python send_test_message.py \"测试消息\"  # 使用.env中的chat_id")
+            print("  python send_test_message.py oc_xxxxx \"测试消息\" text")
+            print("  python send_test_message.py \"测试消息\" post  # 使用.env中的chat_id")
             print()
             print("如何获取 chat_id：")
             print("  1. 先手动给机器人发一条消息")
@@ -83,24 +94,33 @@ if __name__ == "__main__":
         if arg.startswith("oc_"):
             # 看起来像chat_id
             chat_id = arg
-            message = "测试消息：这是一条自动化测试消息"
+            message = "测试消息：这是一条自动化测试消息\n\n**粗体文本**\n- 列表项1\n- 列表项2"
+            msg_type = "post"
         else:
             # 看起来像消息，使用配置文件中的chat_id
             if FEISHU_CHAT_ID:
                 chat_id = FEISHU_CHAT_ID
                 message = arg
+                msg_type = "post"
                 print(f"使用配置文件中的 chat_id: {chat_id}")
             else:
                 print("❌ 错误: 未配置 FEISHU_CHAT_ID")
                 print("请在 .env 文件中设置 FEISHU_CHAT_ID，或者提供完整参数：")
-                print("  python send_test_message.py <chat_id> <message>")
+                print("  python send_test_message.py <chat_id> <message> [msg_type]")
                 sys.exit(1)
-    else:
-        # 两个或更多参数
+    elif len(sys.argv) == 3:
+        # 两个参数：chat_id 和 message
         chat_id = sys.argv[1]
         message = sys.argv[2]
+        msg_type = "post"
+    else:
+        # 三个或更多参数：chat_id, message, msg_type
+        chat_id = sys.argv[1]
+        message = sys.argv[2]
+        msg_type = sys.argv[3]
     
     print(f"\n发送消息到: {chat_id}")
-    print(f"消息内容: {message}\n")
+    print(f"消息内容: {message}")
+    print(f"消息类型: {msg_type}\n")
     
-    send_message(chat_id, message)
+    send_message(chat_id, message, msg_type)
