@@ -368,7 +368,11 @@ class XAgent:
                 return
             
             # 4. 命令解析（在组合引用消息之前，从当前消息中提取命令前缀和临时参数）
+            logger.info(f"[DEBUG] Original message content: {message_content[:200]}...")
             parsed_command, temp_params = self.command_parser.parse_command(message_content)
+            logger.info(f"[DEBUG] Parsed command: provider={parsed_command.provider}, layer={parsed_command.execution_layer}, explicit={parsed_command.explicit}")
+            logger.info(f"[DEBUG] Parsed message: {parsed_command.message[:200]}...")
+            logger.info(f"[DEBUG] Temp params: {temp_params}")
             
             # 处理引用消息（使用解析后的消息内容）
             final_message = parsed_command.message
@@ -476,9 +480,15 @@ class XAgent:
                         provider = provider_name
                         layer = "api"
                     
+                    # 调试：打印 provider 和 layer
+                    logger.info(f"[DEBUG] Parsed provider: {provider}, layer: {layer}")
+                    
                     executor_metadata = self.executor_registry.get_executor_metadata(provider, layer)
+                    logger.info(f"[DEBUG] Executor metadata: {executor_metadata}")
+                    
                     executor_name_override = None
                 executor_name = executor_name_override or (executor_metadata.name if executor_metadata else None)
+                logger.info(f"[DEBUG] Final executor name: {executor_name}")
                 
                 # 添加语言指令（使用有效配置中的语言设置）
                 message_with_language = self._prepend_language_instruction(

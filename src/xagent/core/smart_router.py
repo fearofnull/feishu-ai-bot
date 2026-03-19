@@ -114,6 +114,7 @@ class SmartRouter:
             try:
                 executor = self.get_executor(provider, layer)
                 logger.info(f"[ROUTING] ✅ Using {provider}/{layer} (explicit)")
+                logger.info(f"[ROUTING] ✅ Executor provider name: {executor.get_provider_name()}")
                 return executor
             except ExecutorNotAvailableError as e:
                 # 显式指定的执行器不可用，直接报错，不降级
