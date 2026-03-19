@@ -195,7 +195,7 @@ sudo apt-get install -y git
 
 ```bash
 # 克隆代码
-git clone https://github.com/fearofnull/xagent.git
+git clone git_url
 cd xagent
 
 # 创建虚拟环境

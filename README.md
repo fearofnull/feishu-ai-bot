@@ -31,8 +31,8 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/fearofnull/feishu-ai-bot
-cd feishu-ai-bot
+git clone git_url
+cd xagent
 
 # 2. 配置环境变量
 cp .env.example .env
