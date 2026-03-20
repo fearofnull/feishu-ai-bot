@@ -44,7 +44,7 @@ export const useConfigStore = defineStore('config', {
       
       try {
         const response = await configAPI.getConfigs(filters)
-        this.configs = response.data.data || []
+        this.configs = response.data.data || response.data || []
         return this.configs
       } catch (error) {
         this.error = error.userMessage || '获取配置列表失败'
@@ -60,7 +60,7 @@ export const useConfigStore = defineStore('config', {
       
       try {
         const response = await configAPI.getConfig(sessionId)
-        this.currentConfig = response.data.data
+        this.currentConfig = response.data.data || response.data
         return this.currentConfig
       } catch (error) {
         this.error = error.userMessage || '获取配置详情失败'
@@ -77,7 +77,8 @@ export const useConfigStore = defineStore('config', {
       
       try {
         const response = await configAPI.getEffectiveConfig(sessionId)
-        return response.data.data
+        const data = response.data.data || response.data
+        return data.effective_config || data
       } catch (error) {
         this.error = error.userMessage || '获取有效配置失败'
         throw error
