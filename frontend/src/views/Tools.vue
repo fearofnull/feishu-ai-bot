@@ -30,37 +30,42 @@
       <el-empty description="暂无工具" />
     </div>
 
-    <div v-else class="tools-grid">
-      <el-card 
-        v-for="tool in tools" 
-        :key="tool.name"
-        class="tool-card"
-        :class="{ 'enabled-card': tool.enabled }"
-      >
-        <template #header>
-          <div class="card-header">
-            <h3 class="tool-name">{{ tool.name }}</h3>
-            <div class="status-badge" :class="{ 'enabled': tool.enabled, 'disabled': !tool.enabled }">
-              {{ tool.enabled ? '已启用' : '已禁用' }}
-            </div>
-          </div>
-        </template>
-        <div class="tool-description">{{ tool.description }}</div>
-        <div class="card-footer">
-          <el-switch 
-            v-model="tool.enabled" 
-            @change="handleToggle(tool)"
-            :loading="toggleLoading[tool.name]"
-          />
-        </div>
-      </el-card>
+    <div v-else class="tools-list">
+      <el-table :data="tools" stripe style="width: 100%">
+        <el-table-column prop="name" label="工具名称" min-width="200">
+          <template #default="{ row }">
+            <span class="tool-name">{{ row.name }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="description" label="描述" min-width="300">
+          <template #default="{ row }">
+            <span class="tool-description">{{ row.description }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="enabled" label="状态" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.enabled ? 'success' : 'danger'" size="small">
+              {{ row.enabled ? '已启用' : '已禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="120" align="center">
+          <template #default="{ row }">
+            <el-switch 
+              v-model="row.enabled" 
+              @change="handleToggle(row)"
+              :loading="toggleLoading[row.name]"
+            />
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage, ElEmpty, ElSwitch, ElCard, ElButton, ElIcon } from 'element-plus'
+import { ElMessage, ElEmpty, ElSwitch, ElButton, ElIcon, ElTable, ElTableColumn, ElTag } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import client from '@/api/client'
@@ -205,76 +210,29 @@ onMounted(() => {
   padding: 64px 0;
 }
 
-.tools-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
-}
-
-.tool-card {
+.tools-list {
+  background: #fff;
   border-radius: 8px;
-  transition: all 0.3s ease;
+  padding: 16px;
 }
 
-.tool-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
-}
-
-.enabled-card {
-  border-left: 4px solid #67c23a;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.tools-list :deep(.el-table__body tr:hover > td) {
+  background-color: #e6f7ff !important;
 }
 
 .tool-name {
-  font-size: 16px;
   font-weight: 600;
-  margin: 0;
   color: #333;
 }
 
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-badge.enabled {
-  background-color: #f0f9eb;
-  color: #67c23a;
-}
-
-.status-badge.disabled {
-  background-color: #fef0f0;
-  color: #f56c6c;
-}
-
 .tool-description {
-  font-size: 14px;
   color: #666;
-  margin: 16px 0;
-  line-height: 1.5;
-}
-
-.card-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
+  font-size: 14px;
 }
 
 @media (max-width: 768px) {
   .tools-container {
     padding: 16px;
-  }
-
-  .tools-grid {
-    grid-template-columns: 1fr;
   }
 
   .tools-actions {
