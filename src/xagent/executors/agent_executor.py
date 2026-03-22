@@ -7,7 +7,6 @@ import os
 import logging
 from typing import Optional, List, Dict, Any
 
-from .ai_api_executor import AIAPIExecutor
 from ..models import ExecutionResult, Message
 from ..agents.react_agent import XAgent
 from ..agents.memory import MemoryManager
@@ -16,7 +15,7 @@ from ..config import BotConfig
 logger = logging.getLogger(__name__)
 
 
-class AgentExecutor(AIAPIExecutor):
+class AgentExecutor:
     """支持 Agent 能力的执行器"""
     
     def __init__(
@@ -36,6 +35,10 @@ class AgentExecutor(AIAPIExecutor):
             allowed_commands: 允许的 Shell 命令
             provider_config_manager: 提供商配置管理器
         """
+        self.timeout = timeout
+        self.allowed_paths = allowed_paths
+        self.search_api_key = search_api_key
+        self.allowed_commands = allowed_commands
         # 从提供商配置中获取配置
         provider_api_key = ""
         provider_model = ""  # 不硬编码默认模型，让 model_factory 根据提供商类型决定
@@ -53,8 +56,6 @@ class AgentExecutor(AIAPIExecutor):
         # 规范化提供商类型
         # 支持 xxx_compatible 格式和直接的 xxx 格式
         normalized_provider_type = self._normalize_provider_type(provider_type)
-        
-        super().__init__(provider_api_key, provider_model, timeout)
         
         # 设置环境变量（用于 model_factory）
         if provider_api_key:

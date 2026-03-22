@@ -16,7 +16,6 @@ from .core.executor_registry import (
     AIExecutor,
 )
 from .core.smart_router import SmartRouter
-from .executors.ai_api_executor import AIAPIExecutor
 from .executors.ai_cli_executor import AICLIExecutor
 from .executors.claude_cli_executor import ClaudeCodeCLIExecutor
 from .executors.gemini_cli_executor import GeminiCLIExecutor
@@ -38,7 +37,6 @@ __all__ = [
     "ExecutorNotAvailableError",
     "AIExecutor",
     "SmartRouter",
-    "AIAPIExecutor",
     "AICLIExecutor",
     "ClaudeCodeCLIExecutor",
     "GeminiCLIExecutor",

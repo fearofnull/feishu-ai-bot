@@ -23,16 +23,11 @@ from .core.message_sender import MessageSender
 from .core.event_handler import EventHandler
 from .core.websocket_client import WebSocketClient
 
-# API Executors
-from .executors.openai_api_executor import OpenAIAPIExecutor
-from .executors.claude_api_executor import ClaudeAPIExecutor
-from .executors.gemini_api_executor import GeminiAPIExecutor
-from .executors.agent_executor import AgentExecutor
-
 # CLI Executors
 from .executors.claude_cli_executor import ClaudeCodeCLIExecutor
 from .executors.gemini_cli_executor import GeminiCLIExecutor
 from .executors.qwen_cli_executor import QwenCLIExecutor
+from .executors.agent_executor import AgentExecutor
 
 from .models import ExecutorMetadata
 
@@ -85,18 +80,9 @@ class XAgent:
         # 初始化并注册执行器
         self._register_executors()
         
-        # 初始化统一API接口
-        from .core.unified_api import UnifiedAPIInterface
-        self.unified_api_interface = UnifiedAPIInterface(
-            config_manager=self.provider_config_manager,
-            executor_registry=self.executor_registry,
-            enable_fallback=False  # 可以通过配置启用
-        )
-        
         # 初始化智能路由器
         self.smart_router = SmartRouter(
             executor_registry=self.executor_registry,
-            unified_api_interface=self.unified_api_interface,
             bot_config=self.config
         )
         
@@ -199,84 +185,6 @@ class XAgent:
                 logger.info(f"Registered Qwen Code CLI executor (target: {qwen_cli_dir})")
             except Exception as e:
                 logger.warning(f"Failed to register Qwen Code CLI executor: {e}")
-        
-        # 注册 OpenAI API 执行器
-        try:
-            openai_api_key = os.environ.get("OPENAI_API_KEY")
-            if openai_api_key:
-                openai_executor = OpenAIAPIExecutor(
-                    api_key=openai_api_key,
-                    timeout=self.config.ai_timeout
-                )
-                openai_metadata = ExecutorMetadata(
-                    name="OpenAI API",
-                    provider="openai",
-                    layer="api",
-                    version="1.0.0",
-                    description="OpenAI API for text generation",
-                    capabilities=["text_generation"],
-                    command_prefixes=["@openai-api"],
-                    priority=1,
-                    config_required=["openai_api_key"]
-                )
-                self.executor_registry.register_api_executor(
-                    "openai", openai_executor, openai_metadata
-                )
-                logger.info("Registered OpenAI API executor")
-        except Exception as e:
-            logger.warning(f"Failed to register OpenAI API executor: {e}")
-        
-        # 注册 Claude API 执行器
-        try:
-            claude_api_key = os.environ.get("ANTHROPIC_API_KEY")
-            if claude_api_key:
-                claude_executor = ClaudeAPIExecutor(
-                    api_key=claude_api_key,
-                    timeout=self.config.ai_timeout
-                )
-                claude_metadata = ExecutorMetadata(
-                    name="Claude API",
-                    provider="claude",
-                    layer="api",
-                    version="1.0.0",
-                    description="Claude API for text generation",
-                    capabilities=["text_generation"],
-                    command_prefixes=["@claude-api"],
-                    priority=2,
-                    config_required=["anthropic_api_key"]
-                )
-                self.executor_registry.register_api_executor(
-                    "claude", claude_executor, claude_metadata
-                )
-                logger.info("Registered Claude API executor")
-        except Exception as e:
-            logger.warning(f"Failed to register Claude API executor: {e}")
-        
-        # 注册 Gemini API 执行器
-        try:
-            gemini_api_key = os.environ.get("GEMINI_API_KEY")
-            if gemini_api_key:
-                gemini_executor = GeminiAPIExecutor(
-                    api_key=gemini_api_key,
-                    timeout=self.config.ai_timeout
-                )
-                gemini_metadata = ExecutorMetadata(
-                    name="Gemini API",
-                    provider="gemini",
-                    layer="api",
-                    version="1.0.0",
-                    description="Gemini API for text generation",
-                    capabilities=["text_generation"],
-                    command_prefixes=["@gemini-api"],
-                    priority=3,
-                    config_required=["gemini_api_key"]
-                )
-                self.executor_registry.register_api_executor(
-                    "gemini", gemini_executor, gemini_metadata
-                )
-                logger.info("Registered Gemini API executor")
-        except Exception as e:
-            logger.warning(f"Failed to register Gemini API executor: {e}")
         
         # 注册 Agent 执行器
         try:
@@ -454,39 +362,25 @@ class XAgent:
                 )
                 
                 # 获取执行器元数据
-                provider_name = executor.get_provider_name()  # e.g., "openai-api", "claude-cli", "unified-api"
+                provider_name = executor.get_provider_name()  # e.g., "agent", "claude-cli", "gemini-cli"
                 
-                # 特殊处理 unified-api：获取实际的提供商配置信息
-                if provider_name == "unified-api":
-                    executor_metadata = None
-                    # 获取当前提供商配置
-                    if hasattr(executor, 'get_current_provider_config'):
-                        current_config = executor.get_current_provider_config()
-                        if current_config:
-                            # 格式：提供商名称 (模型名称)
-                            executor_name_override = f"{current_config.name} ({current_config.default_model})"
-                        else:
-                            executor_name_override = "Unified API (@gpt)"
-                    else:
-                        executor_name_override = "Unified API (@gpt)"
+                # 解析 provider 和 layer
+                if "-" in provider_name:
+                    parts = provider_name.rsplit("-", 1)  # 从右边分割一次
+                    provider = parts[0]  # e.g., "claude", "gemini"
+                    layer = parts[1]     # e.g., "cli"
                 else:
-                    # 解析 provider 和 layer
-                    if "-" in provider_name:
-                        parts = provider_name.rsplit("-", 1)  # 从右边分割一次
-                        provider = parts[0]  # e.g., "openai", "claude"
-                        layer = parts[1]     # e.g., "api", "cli"
-                    else:
-                        # 兜底：如果没有连字符，假设是 API
-                        provider = provider_name
-                        layer = "api"
-                    
-                    # 调试：打印 provider 和 layer
-                    logger.info(f"[DEBUG] Parsed provider: {provider}, layer: {layer}")
-                    
-                    executor_metadata = self.executor_registry.get_executor_metadata(provider, layer)
-                    logger.info(f"[DEBUG] Executor metadata: {executor_metadata}")
-                    
-                    executor_name_override = None
+                    # 兜底：如果没有连字符，假设是 agent
+                    provider = provider_name
+                    layer = "agent"
+                
+                # 调试：打印 provider 和 layer
+                logger.info(f"[DEBUG] Parsed provider: {provider}, layer: {layer}")
+                
+                executor_metadata = self.executor_registry.get_executor_metadata(provider, layer)
+                logger.info(f"[DEBUG] Executor metadata: {executor_metadata}")
+                
+                executor_name_override = None
                 executor_name = executor_name_override or (executor_metadata.name if executor_metadata else None)
                 logger.info(f"[DEBUG] Final executor name: {executor_name}")
                 
@@ -497,12 +391,21 @@ class XAgent:
                 logger.info(f"[DEBUG] message_with_language after prepend: {message_with_language[:300]}")
                 
                 # 执行 AI
-                if executor.get_provider_name().endswith("-api"):
-                    # API 层：传递对话历史
-                    logger.debug(f"[API] Executing with message: {message_with_language[:200]}...")
+                if provider_name == "agent":
+                    # Agent 层：传递对话历史和上下文信息
+                    logger.debug(f"[Agent] Executing with message: {message_with_language[:200]}...")
+                    
+                    # 准备 additional_params，包含用户ID和聊天ID
+                    additional_params = {
+                        "user_id": sender_id,
+                        "chat_id": chat_id,
+                        "chat_type": chat_type
+                    }
+                    
                     result = executor.execute(
                         message_with_language,
-                        conversation_history=conversation_history
+                        conversation_history=conversation_history,
+                        additional_params=additional_params
                     )
                 else:
                     # CLI 层：使用原生会话，传递有效的项目目录

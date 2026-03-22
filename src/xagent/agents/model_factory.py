@@ -82,6 +82,10 @@ def _create_openai_model_and_formatter() -> Tuple[OpenAIChatModel, OpenAIChatFor
     
     # Create model instance
     client_kwargs = {"base_url": base_url} if base_url else {}
+    # Add custom headers for API-KEY authentication (for custom OpenAI-compatible APIs)
+    if api_key:
+        client_kwargs["default_headers"] = {"API-KEY": api_key}
+    
     model = OpenAIChatModel(
         model_name,
         api_key=api_key,

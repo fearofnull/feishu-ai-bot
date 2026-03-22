@@ -1,7 +1,7 @@
 """
 单元测试：命令解析器
 
-验证命令解析器正确处理 @gpt 和 CLI 前缀，同时拒绝传统 API 前缀
+验证命令解析器正确处理 CLI 前缀和默认行为
 """
 import pytest
 from src.xagent.utils.command_parser import CommandParser
@@ -11,16 +11,16 @@ from src.xagent.models import ParsedCommand
 class TestCommandParserPrefixMapping:
     """测试命令前缀映射"""
     
-    def test_gpt_prefix_in_mapping(self):
-        """验证 @gpt 前缀存在于映射中"""
+    def test_agent_prefix_in_mapping(self):
+        """验证 @agent 前缀存在于映射中"""
         parser = CommandParser()
-        assert "@gpt" in parser.PREFIX_MAPPING
-        assert parser.PREFIX_MAPPING["@gpt"] == ("unified", "api")
+        assert "@agent" in parser.PREFIX_MAPPING
+        assert parser.PREFIX_MAPPING["@agent"] == ("agent", "api")
     
     def test_legacy_prefixes_not_in_mapping(self):
         """验证传统 API 前缀不在映射中"""
         parser = CommandParser()
-        legacy_prefixes = ["@claude-api", "@gemini-api", "@openai"]
+        legacy_prefixes = ["@gpt", "@claude-api", "@gemini-api", "@openai"]
         
         for prefix in legacy_prefixes:
             assert prefix not in parser.PREFIX_MAPPING, \
@@ -43,57 +43,57 @@ class TestCommandParserPrefixMapping:
                 f"CLI 前缀 {prefix} 的映射值应该是 {expected_value}"
 
 
-class TestGptCommandParsing:
-    """测试 @gpt 命令解析"""
+class TestAgentCommandParsing:
+    """测试 @agent 命令解析"""
     
-    def test_gpt_command_basic(self):
-        """测试基本的 @gpt 命令解析"""
+    def test_agent_command_basic(self):
+        """测试基本的 @agent 命令解析"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("@gpt 你好")
+        parsed, params = parser.parse_command("@agent 你好")
         
-        assert parsed.provider == "unified"
+        assert parsed.provider == "agent"
         assert parsed.execution_layer == "api"
         assert parsed.message == "你好"
         assert parsed.explicit is True
     
-    def test_gpt_command_with_long_message(self):
-        """测试 @gpt 命令带长消息"""
+    def test_agent_command_with_long_message(self):
+        """测试 @agent 命令带长消息"""
         parser = CommandParser()
         long_message = "请帮我分析这段代码的性能问题，并给出优化建议"
-        parsed, params = parser.parse_command(f"@gpt {long_message}")
+        parsed, params = parser.parse_command(f"@agent {long_message}")
         
-        assert parsed.provider == "unified"
+        assert parsed.provider == "agent"
         assert parsed.execution_layer == "api"
         assert parsed.message == long_message
         assert parsed.explicit is True
     
-    def test_gpt_command_case_insensitive(self):
-        """测试 @gpt 命令大小写不敏感"""
+    def test_agent_command_case_insensitive(self):
+        """测试 @agent 命令大小写不敏感"""
         parser = CommandParser()
-        test_cases = ["@GPT 你好", "@Gpt 你好", "@gPt 你好"]
+        test_cases = ["@AGENT 你好", "@Agent 你好", "@aGeNt 你好"]
         
         for test_case in test_cases:
             parsed, params = parser.parse_command(test_case)
-            assert parsed.provider == "unified"
+            assert parsed.provider == "agent"
             assert parsed.execution_layer == "api"
             assert parsed.explicit is True
     
-    def test_gpt_command_with_extra_spaces(self):
-        """测试 @gpt 命令带额外空格"""
+    def test_agent_command_with_extra_spaces(self):
+        """测试 @agent 命令带额外空格"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("@gpt    你好")
+        parsed, params = parser.parse_command("@agent    你好")
         
-        assert parsed.provider == "unified"
+        assert parsed.provider == "agent"
         assert parsed.execution_layer == "api"
         assert parsed.message == "你好"
         assert parsed.explicit is True
     
-    def test_gpt_command_with_temp_params(self):
-        """测试 @gpt 命令带临时参数"""
+    def test_agent_command_with_temp_params(self):
+        """测试 @agent 命令带临时参数"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("@gpt --model=gpt-4 你好")
+        parsed, params = parser.parse_command("@agent --model=gpt-4 你好")
         
-        assert parsed.provider == "unified"
+        assert parsed.provider == "agent"
         assert parsed.execution_layer == "api"
         assert "你好" in parsed.message
         assert parsed.explicit is True
@@ -103,16 +103,22 @@ class TestGptCommandParsing:
 class TestLegacyPrefixRejection:
     """测试传统前缀不再被识别"""
     
+    def test_gpt_prefix_not_recognized(self):
+        """测试 @gpt 前缀不被识别"""
+        parser = CommandParser()
+        parsed, params = parser.parse_command("@gpt 你好")
+        
+        assert parsed.explicit is False
+        assert parsed.provider == "agent"
+        assert "@gpt" in parsed.message
+    
     def test_claude_api_prefix_not_recognized(self):
         """测试 @claude-api 前缀不被识别"""
         parser = CommandParser()
         parsed, params = parser.parse_command("@claude-api 你好")
         
-        # 不被识别为显式前缀，应该使用默认值
         assert parsed.explicit is False
-        assert parsed.provider == "claude"  # 默认提供商
-        assert parsed.execution_layer == "api"  # 默认执行层
-        # 消息应该包含原始前缀（因为没有被识别）
+        assert parsed.provider == "agent"
         assert "@claude-api" in parsed.message
     
     def test_gemini_api_prefix_not_recognized(self):
@@ -121,8 +127,7 @@ class TestLegacyPrefixRejection:
         parsed, params = parser.parse_command("@gemini-api 你好")
         
         assert parsed.explicit is False
-        assert parsed.provider == "claude"
-        assert parsed.execution_layer == "api"
+        assert parsed.provider == "agent"
         assert "@gemini-api" in parsed.message
     
     def test_openai_prefix_not_recognized(self):
@@ -131,14 +136,13 @@ class TestLegacyPrefixRejection:
         parsed, params = parser.parse_command("@openai 你好")
         
         assert parsed.explicit is False
-        assert parsed.provider == "claude"
-        assert parsed.execution_layer == "api"
+        assert parsed.provider == "agent"
         assert "@openai" in parsed.message
     
     def test_all_legacy_prefixes_not_recognized(self):
         """测试所有传统前缀都不被识别"""
         parser = CommandParser()
-        legacy_prefixes = ["@claude-api", "@gemini-api", "@openai"]
+        legacy_prefixes = ["@gpt", "@claude-api", "@gemini-api", "@openai"]
         
         for prefix in legacy_prefixes:
             parsed, params = parser.parse_command(f"{prefix} 测试消息")
@@ -218,7 +222,6 @@ class TestPrefixPriority:
         """测试更长的前缀优先匹配"""
         parser = CommandParser()
         
-        # @claude-cli 应该优先于 @claude（如果存在）
         parsed, params = parser.parse_command("@claude-cli 测试")
         assert parsed.provider == "claude"
         assert parsed.execution_layer == "cli"
@@ -232,7 +235,7 @@ class TestMessageContentPreservation:
         """测试前缀后的消息内容被正确保留"""
         parser = CommandParser()
         test_cases = [
-            ("@gpt 你好世界", "你好世界"),
+            ("@agent 你好世界", "你好世界"),
             ("@claude-cli 分析这段代码", "分析这段代码"),
             ("@code 修改 main.py 文件", "修改 main.py 文件"),
         ]
@@ -246,7 +249,7 @@ class TestMessageContentPreservation:
         """测试特殊字符被保留"""
         parser = CommandParser()
         special_message = "测试!@#$%^&*()_+-=[]{}|;':\",./<>?"
-        parsed, params = parser.parse_command(f"@gpt {special_message}")
+        parsed, params = parser.parse_command(f"@agent {special_message}")
         
         assert parsed.message == special_message
     
@@ -254,7 +257,7 @@ class TestMessageContentPreservation:
         """测试 Unicode 字符被保留"""
         parser = CommandParser()
         unicode_message = "你好世界 🌍 こんにちは 안녕하세요"
-        parsed, params = parser.parse_command(f"@gpt {unicode_message}")
+        parsed, params = parser.parse_command(f"@agent {unicode_message}")
         
         assert parsed.message == unicode_message
 
@@ -262,36 +265,53 @@ class TestMessageContentPreservation:
 class TestDefaultBehavior:
     """测试默认行为"""
     
-    def test_no_prefix_uses_defaults(self):
-        """测试没有前缀时使用默认值"""
+    def test_no_prefix_uses_agent(self):
+        """测试无前缀消息使用 Agent"""
         parser = CommandParser()
         parsed, params = parser.parse_command("你好")
         
-        assert parsed.provider == "claude"  # 默认提供商
-        assert parsed.execution_layer == "api"  # 默认执行层
+        assert parsed.provider == "agent"
+        assert parsed.execution_layer == "api"
         assert parsed.message == "你好"
         assert parsed.explicit is False
     
-    def test_unrecognized_prefix_uses_defaults(self):
-        """测试未识别的前缀使用默认值"""
+    def test_unrecognized_prefix_uses_agent(self):
+        """测试未识别的前缀使用 Agent"""
         parser = CommandParser()
         parsed, params = parser.parse_command("@unknown 你好")
         
-        assert parsed.explicit is False
-        assert parsed.provider == "claude"
+        assert parsed.provider == "agent"
         assert parsed.execution_layer == "api"
         assert "@unknown" in parsed.message
+        assert parsed.explicit is False
 
 
 class TestEdgeCases:
     """测试边缘情况"""
     
-    def test_empty_message_after_prefix(self):
-        """测试前缀后消息为空"""
+    def test_empty_message(self):
+        """测试空消息"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("@gpt")
+        parsed, params = parser.parse_command("")
         
-        assert parsed.provider == "unified"
+        assert parsed.provider == "agent"
+        assert parsed.message == ""
+        assert parsed.explicit is False
+    
+    def test_whitespace_only_message(self):
+        """测试只有空格的消息"""
+        parser = CommandParser()
+        parsed, params = parser.parse_command("   ")
+        
+        assert parsed.provider == "agent"
+        assert parsed.explicit is False
+    
+    def test_empty_message_after_prefix(self):
+        """测试前缀后空消息"""
+        parser = CommandParser()
+        parsed, params = parser.parse_command("@agent")
+        
+        assert parsed.provider == "agent"
         assert parsed.execution_layer == "api"
         assert parsed.message == ""
         assert parsed.explicit is True
@@ -299,51 +319,101 @@ class TestEdgeCases:
     def test_prefix_only_with_spaces(self):
         """测试只有前缀和空格"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("@gpt   ")
+        parsed, params = parser.parse_command("@agent   ")
         
-        assert parsed.provider == "unified"
+        assert parsed.provider == "agent"
         assert parsed.execution_layer == "api"
         assert parsed.message == ""
         assert parsed.explicit is True
     
     def test_prefix_in_middle_of_message(self):
-        """测试前缀在消息中间（不应该被识别）"""
+        """测试前缀在消息中间（会被识别，因为支持任意位置匹配）"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("你好 @gpt 世界")
+        parsed, params = parser.parse_command("你好 @agent 世界")
         
-        # 前缀不在开头，不应该被识别
-        assert parsed.explicit is False
-        assert "@gpt" in parsed.message
+        assert parsed.explicit is True
+        assert parsed.provider == "agent"
+        assert "@agent" not in parsed.message
     
     def test_multiple_prefixes(self):
         """测试多个前缀（只识别第一个）"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("@gpt @code 你好")
+        parsed, params = parser.parse_command("@agent @code 你好")
         
-        # 只识别第一个前缀
-        assert parsed.provider == "unified"
+        assert parsed.provider == "agent"
         assert parsed.execution_layer == "api"
         assert parsed.explicit is True
-        assert "@code" in parsed.message  # 第二个前缀保留在消息中
+        assert "@code" in parsed.message
 
 
 class TestTempParams:
     """测试临时参数解析"""
     
-    def test_temp_params_extracted(self):
-        """测试临时参数被正确提取"""
+    def test_single_temp_param(self):
+        """测试单个临时参数"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("@gpt --model=gpt-4 --temperature=0.7 你好")
+        parsed, params = parser.parse_command("@agent --model=gpt-4 你好")
         
         assert params.get("model") == "gpt-4"
-        assert params.get("temperature") == "0.7"
-        assert "--model" not in parsed.message
-        assert "--temperature" not in parsed.message
+        assert parsed.message == "你好"
     
-    def test_temp_params_with_no_prefix(self):
-        """测试没有前缀时临时参数也能提取"""
+    def test_multiple_temp_params(self):
+        """测试多个临时参数"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("--model=gpt-4 你好")
+        parsed, params = parser.parse_command(
+            "@agent --model=gpt-4 --temp=0.7 你好"
+        )
         
         assert params.get("model") == "gpt-4"
-        assert "--model" not in parsed.message
+        assert params.get("temp") == "0.7"
+        assert parsed.message == "你好"
+    
+    def test_temp_param_with_spaces(self):
+        """测试带空格的临时参数值"""
+        parser = CommandParser()
+        parsed, params = parser.parse_command(
+            '@agent --dir="/path/with spaces" 你好'
+        )
+        
+        assert params.get("dir") == '"/path/with'
+        assert parsed.message == 'spaces" 你好'
+    
+    def test_temp_params_removed_from_message(self):
+        """测试临时参数从消息中移除"""
+        parser = CommandParser()
+        parsed, params = parser.parse_command(
+            "@agent --key=value 原始消息"
+        )
+        
+        assert "--key=value" not in parsed.message
+        assert parsed.message == "原始消息"
+
+
+class TestCliKeywords:
+    """测试 CLI 关键词检测"""
+    
+    def test_cli_keywords_detection(self):
+        """测试 CLI 关键词检测"""
+        parser = CommandParser()
+        
+        assert parser.detect_cli_keywords("查看代码") is True
+        assert parser.detect_cli_keywords("view code") is True
+        assert parser.detect_cli_keywords("分析代码") is True
+        assert parser.detect_cli_keywords("修改文件") is True
+        assert parser.detect_cli_keywords("执行命令") is True
+    
+    def test_non_cli_keywords(self):
+        """测试非 CLI 关键词"""
+        parser = CommandParser()
+        
+        assert parser.detect_cli_keywords("你好") is False
+        assert parser.detect_cli_keywords("什么是 AI") is False
+        assert parser.detect_cli_keywords("今天天气怎么样") is False
+    
+    def test_cli_keywords_case_insensitive(self):
+        """测试 CLI 关键词大小写不敏感"""
+        parser = CommandParser()
+        
+        assert parser.detect_cli_keywords("VIEW CODE") is True
+        assert parser.detect_cli_keywords("Analyze Code") is True
+        assert parser.detect_cli_keywords("RUN SCRIPT") is True

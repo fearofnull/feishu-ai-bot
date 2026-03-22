@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "last_updated": "2024-01-01",
+  "version": "2.0.0",
+  "last_updated": "2026-03-22",
   "help_message": {
     "title": "📖 飞书AI机器人使用帮助 / Help",
     "sections": [
@@ -8,15 +8,15 @@
         "title": "🤖 **AI提供商命令 / AI Provider Commands**",
         "subsections": [
           {
-            "title": "统一API层（推荐）/ Unified API Layer (Recommended):",
+            "title": "Agent层（默认）/ Agent Layer (Default):",
             "commands": [
               {
-                "command": "@gpt",
-                "description": "统一AI命令，使用Web管理界面配置的默认提供商"
+                "command": "无前缀",
+                "description": "默认使用 Agent，具备工具调用、多步推理、文件操作、网络搜索等能力"
               },
               {
-                "command": "无前缀",
-                "description": "默认使用统一API（Web配置的提供商）"
+                "command": "@agent",
+                "description": "显式指定使用 Agent 执行器"
               }
             ]
           },
@@ -88,9 +88,9 @@
       {
         "title": "💬 **使用示例 / Examples**",
         "examples": [
-          "@gpt 什么是人工智能？",
+          "什么是人工智能？（使用 Agent）",
+          "@agent 搜索最新的 AI 新闻",
           "@claude-cli 查看项目结构",
-          "什么是Python？（使用Web配置的提供商）",
           "/setdir /path/to/project（设置工作目录）",
           "/lang en-US（切换到英文）",
           "/cliprovider claude（设置默认CLI提供商）",
