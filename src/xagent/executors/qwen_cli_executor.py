@@ -86,8 +86,10 @@ class QwenCLIExecutor(AICLIExecutor):
         # JSON 输出，便于解析 session_id 和 result
         args.extend(["--output-format", "json"])
 
+        # 用安全规则包装用户提示
+        wrapped_prompt = self._wrap_prompt_with_security_rules(user_prompt)
         # 用户提示
-        args.extend(["-p", user_prompt])
+        args.extend(["-p", wrapped_prompt])
 
         return args
 

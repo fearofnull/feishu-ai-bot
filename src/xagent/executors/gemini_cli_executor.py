@@ -154,8 +154,10 @@ class GeminiCLIExecutor(AICLIExecutor):
                 elif value is not None:
                     args.extend([f"--{key}", str(value)])
         
+        # 用安全规则包装用户提示
+        wrapped_prompt = self._wrap_prompt_with_security_rules(user_prompt)
         # 查询作为位置参数（必须在最后）
-        args.append(user_prompt)
+        args.append(wrapped_prompt)
         
         return args
     

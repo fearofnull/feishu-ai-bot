@@ -63,18 +63,39 @@ class AICLIExecutor(ABC):
         """
         pass
     
-    @abstractmethod
+    def _wrap_prompt_with_security_rules(self, user_prompt: str) -> str:
+        """用安全规则包装用户提示
+
+        在用户提示前添加安全规则，防止危险操作。
+
+        Args:
+            user_prompt: 原始用户提示
+
+        Returns:
+            包装后的提示词
+        """
+        from ..constants.security import SECURITY_RULES
+        security_rules = f"""
+你是一个安全的 AI 助手，必须遵守以下安全规则：
+
+{SECURITY_RULES}
+
+现在处理用户的请求：
+
+"""
+        return security_rules + user_prompt
+
     def build_command_args(
         self,
         user_prompt: str,
         additional_params: Optional[Dict[str, Any]] = None
     ) -> List[str]:
         """构建 AI CLI 命令参数列表
-        
+
         Args:
             user_prompt: 用户提示
             additional_params: 额外参数
-            
+
         Returns:
             命令参数列表
         """

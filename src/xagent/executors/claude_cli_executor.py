@@ -135,8 +135,10 @@ class ClaudeCodeCLIExecutor(AICLIExecutor):
                 if session_id:
                     args.extend(["--session", session_id])
         
+        # 用安全规则包装用户提示
+        wrapped_prompt = self._wrap_prompt_with_security_rules(user_prompt)
         # 添加用户提示
-        args.extend(["-p", user_prompt])
+        args.extend(["-p", wrapped_prompt])
         
         # 添加额外参数
         if additional_params:
