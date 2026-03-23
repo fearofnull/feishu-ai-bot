@@ -169,19 +169,27 @@ class MessageProcessor:
     def _is_bot_mentioned(self, message) -> bool:
         """检测消息中是否@了机器人"""
         try:
-            if hasattr(message, 'mentions') and message.mentions:
-                bot_open_id = self._get_bot_open_id()
-                if not bot_open_id:
-                    return True
-                
+            # 只有当消息中包含 mentions 字段时，才可能被@
+            if not (hasattr(message, 'mentions') and message.mentions):
+                return False
+            
+            bot_open_id = self._get_bot_open_id()
+            
+            # 如果获取到了机器人 open_id，检查是否被@
+            if bot_open_id:
                 for mention in message.mentions:
                     if hasattr(mention, 'id') and hasattr(mention.id, 'open_id'):
                         if mention.id.open_id == bot_open_id:
                             return True
-            return False
+                return False
+            else:
+                # 如果没有获取到机器人 open_id，无法准确检测，返回 False
+                # 这样可以避免不@也回复的问题
+                logger.warning("Bot open_id not available, cannot accurately check mention. Skipping.")
+                return False
         except Exception as e:
             logger.warning(f"Error checking bot mention: {e}")
-            return True
+            return False
     
     def _send_emoji_reaction_async(self, message_id: str):
         """异步发送 emoji 反应"""

@@ -98,11 +98,59 @@ class XAgent:
     
     def _init_lark_client(self):
         """初始化飞书客户端"""
+        logger.info("Building Lark client...")
         self.client = LarkClient.builder() \
             .app_id(self.config.app_id) \
             .app_secret(self.config.app_secret) \
             .build()
-        self.bot_open_id = None
+        logger.info("Lark client built successfully")
+        
+        # 通过飞书 API 获取机器人 open_id
+        self.bot_open_id = self._get_bot_open_id()
+        logger.info(f"Bot open_id: {self.bot_open_id}")
+    
+    def _get_bot_open_id(self):
+        """通过飞书 API 获取机器人的 open_id"""
+        import requests
+        
+        try:
+            # 1. 获取 tenant_access_token
+            token_url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
+            token_data = {
+                "app_id": self.config.app_id,
+                "app_secret": self.config.app_secret
+            }
+            
+            logger.info("Getting tenant_access_token...")
+            token_response = requests.post(token_url, json=token_data, timeout=10)
+            token_result = token_response.json()
+            
+            if token_result.get("code") != 0:
+                logger.warning(f"Failed to get token: {token_result}")
+                return None
+            
+            tenant_access_token = token_result.get("tenant_access_token")
+            logger.info("Got tenant_access_token successfully")
+            
+            # 2. 获取机器人信息
+            bot_url = "https://open.feishu.cn/open-apis/bot/v3/info"
+            headers = {"Authorization": f"Bearer {tenant_access_token}"}
+            
+            logger.info("Getting bot info...")
+            bot_response = requests.get(bot_url, headers=headers, timeout=10)
+            bot_result = bot_response.json()
+            
+            if bot_result.get("code") == 0 and bot_result.get("bot"):
+                bot_open_id = bot_result["bot"].get("open_id")
+                logger.info(f"Successfully retrieved bot open_id: {bot_open_id}")
+                return bot_open_id
+            else:
+                logger.warning(f"Failed to get bot info: {bot_result}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error getting bot open_id: {e}", exc_info=True)
+            return None
     
     def _init_core_components(self):
         """初始化核心组件"""
