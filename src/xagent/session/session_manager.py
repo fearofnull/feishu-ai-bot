@@ -404,6 +404,10 @@ class SessionManager:
         """
         message_lower = message.strip().lower()
         
+        # 移除开头的 @ 提及部分
+        import re
+        message_lower = re.sub(r'^@[^\s]+\s*', '', message_lower)
+        
         return (
             message_lower in [cmd.lower() for cmd in self.NEW_SESSION_COMMANDS] or
             message_lower in [cmd.lower() for cmd in self.SESSION_INFO_COMMANDS] or
@@ -423,6 +427,10 @@ class SessionManager:
             命令响应消息，如果不是会话命令则返回 None
         """
         message_lower = message.strip().lower()
+        
+        # 移除开头的 @ 提及部分
+        import re
+        message_lower = re.sub(r'^@[^\s]+\s*', '', message_lower)
         
         # 帮助命令
         if message_lower in [cmd.lower() for cmd in self.HELP_COMMANDS]:

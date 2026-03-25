@@ -291,6 +291,10 @@ class ConfigManager:
         """
         message_lower = message.strip().lower()
         
+        # 移除开头的 @ 提及部分
+        import re
+        message_lower = re.sub(r'^@[^\s]+\s*', '', message_lower)
+        
         # 检查是否以配置命令开头
         for cmd in self.CONFIG_COMMANDS.keys():
             if message_lower.startswith(cmd.lower()):
@@ -329,6 +333,13 @@ class ConfigManager:
             命令响应消息，如果不是配置命令则返回 None
         """
         message_lower = message.strip().lower()
+        original_message = message.strip()
+        
+        # 移除开头的 @ 提及部分
+        import re
+        message_lower = re.sub(r'^@[^\s]+\s*', '', message_lower)
+        # 同时处理原始消息，用于提取参数
+        clean_message = re.sub(r'^@[^\s]+\s*', '', original_message)
         
         # 查看配置命令
         if message_lower in [cmd.lower() for cmd in self.VIEW_CONFIG_COMMANDS]:
@@ -348,7 +359,7 @@ class ConfigManager:
         for cmd, config_key in self.CONFIG_COMMANDS.items():
             if message_lower.startswith(cmd.lower()):
                 # 提取配置值
-                value = message[len(cmd):].strip()
+                value = clean_message[len(cmd):].strip()
                 
                 if not value:
                     return f"❌ 请提供配置值 / Please provide a value\n用法 / Usage: {cmd} <value>"
