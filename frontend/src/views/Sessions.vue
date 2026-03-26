@@ -62,6 +62,12 @@
         
         <el-table-column prop="user_id" label="User ID" width="150" />
         
+        <el-table-column prop="chat_id" label="Chat ID" width="200">
+          <template #default="{ row }">
+            <el-text truncated>{{ row.chat_id || '-' }}</el-text>
+          </template>
+        </el-table-column>
+        
         <el-table-column label="消息数" width="100" align="center">
           <template #default="{ row }">
             <el-tag type="info" size="small">{{ row.message_count }}</el-tag>
@@ -150,7 +156,8 @@ const filteredSessions = computed(() => {
   const query = searchQuery.value.toLowerCase()
   return sessions.value.filter(session => 
     session.session_id.toLowerCase().includes(query) ||
-    session.user_id.toLowerCase().includes(query)
+    session.user_id.toLowerCase().includes(query) ||
+    (session.chat_id && session.chat_id.toLowerCase().includes(query))
   )
 })
 

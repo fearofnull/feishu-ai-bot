@@ -113,7 +113,7 @@ class ExecutionCoordinator:
             
             self._send_response(result, context, executor_name)
             
-            self._update_session_history(context.sender_id, context.parsed_command.message, result)
+            self._update_session_history(context.sender_id, context.chat_id, context.parsed_command.message, result)
             
             logger.info(f"Successfully processed message {context.message_id}")
             return result.success
@@ -139,7 +139,7 @@ class ExecutionCoordinator:
         effective_config: Dict[str, Any]
     ) -> tuple[ExecutionResult, Optional[str]]:
         """执行 AI 任务"""
-        conversation_history = self.session_manager.get_conversation_history(context.sender_id)
+        conversation_history = self.session_manager.get_conversation_history(context.chat_id)
         
         provider_name = executor.get_provider_name()
         provider, layer = self._parse_provider_name(provider_name)
@@ -247,16 +247,14 @@ class ExecutionCoordinator:
     def _update_session_history(
         self,
         sender_id: Optional[str],
+        chat_id: str,
         user_message: str,
         result: ExecutionResult
     ):
         """更新会话历史"""
-        if not sender_id:
-            return
-        
-        self.session_manager.add_message(sender_id, "user", user_message)
+        self.session_manager.add_message(sender_id, chat_id, "user", user_message)
         self.session_manager.add_message(
-            sender_id, "assistant",
+            sender_id, chat_id, "assistant",
             result.stdout if result.success else result.error_message
         )
     

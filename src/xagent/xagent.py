@@ -328,11 +328,24 @@ class XAgent:
     def _send_fallback_error(self, data: P2ImMessageReceiveV1, error_msg: str):
         """发送兜底错误消息"""
         try:
+            chat_id = data.event.message.chat_id
+            sender_id = data.event.sender.sender_id
+            
+            self.session_manager.add_message(
+                sender_id, chat_id, "user", 
+                data.event.message.content or ""
+            )
+            
+            error_response = f"处理消息时发生错误：{error_msg}"
+            self.session_manager.add_message(
+                sender_id, chat_id, "assistant", error_response
+            )
+            
             self.message_sender.send_message(
                 data.event.message.chat_type,
-                data.event.message.chat_id,
+                chat_id,
                 data.event.message.message_id,
-                f"处理消息时发生错误：{error_msg}"
+                error_response
             )
         except Exception:
             pass

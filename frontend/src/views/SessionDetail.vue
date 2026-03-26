@@ -46,6 +46,10 @@
             <el-text>{{ session.user_id }}</el-text>
           </el-descriptions-item>
           
+          <el-descriptions-item label="Chat ID">
+            <el-text>{{ session.chat_id || '-' }}</el-text>
+          </el-descriptions-item>
+          
           <el-descriptions-item label="创建时间">
             {{ formatTimestamp(session.created_at) }}
           </el-descriptions-item>

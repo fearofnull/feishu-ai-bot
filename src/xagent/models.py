@@ -29,6 +29,7 @@ class Session:
     """用户会话"""
     session_id: str
     user_id: str
+    chat_id: str
     created_at: int
     last_active: int
     messages: List[Message] = field(default_factory=list)

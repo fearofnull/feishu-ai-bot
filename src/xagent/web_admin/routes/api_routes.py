@@ -1019,14 +1019,14 @@ def register_api_routes(
                     with open(sessions_json_path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         sessions_data = data.get('sessions', {})
-                        for user_id, session_dict in sessions_data.items():
-                            # Extract summary info
+                        for session_dict in sessions_data.values():
                             message_count = len(session_dict.get('messages', []))
                             first_message = session_dict.get('messages', [{}])[0].get('content', '')[:100] if message_count > 0 else ''
                             
                             session_summary = {
                                 'session_id': session_dict.get('session_id'),
                                 'user_id': session_dict.get('user_id'),
+                                'chat_id': session_dict.get('chat_id', ''),
                                 'created_at': session_dict.get('created_at'),
                                 'last_active': session_dict.get('last_active'),
                                 'message_count': message_count,
@@ -1045,13 +1045,13 @@ def register_api_routes(
                         with open(session_file, 'r', encoding='utf-8') as f:
                             session_data = json.load(f)
                             
-                            # Extract summary info
                             message_count = len(session_data.get('messages', []))
                             first_message = session_data.get('messages', [{}])[0].get('content', '')[:100] if message_count > 0 else ''
                             
                             session_summary = {
                                 'session_id': session_data.get('session_id'),
                                 'user_id': session_data.get('user_id'),
+                                'chat_id': session_data.get('chat_id', ''),
                                 'created_at': session_data.get('created_at'),
                                 'last_active': session_data.get('last_active'),
                                 'message_count': message_count,
@@ -1080,6 +1080,7 @@ def register_api_routes(
                     s for s in filtered_sessions 
                     if search.lower() in str(s.get('session_id', '')).lower() 
                     or search.lower() in str(s.get('user_id', '')).lower()
+                    or search.lower() in str(s.get('chat_id', '')).lower()
                 ]
             
             # Apply sorting

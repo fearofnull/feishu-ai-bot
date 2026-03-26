@@ -116,7 +116,7 @@ class CommandDispatcher:
         if not self.session_manager.is_session_command(message):
             return False
         
-        response = self.session_manager.handle_session_command(user_id, message)
+        response = self.session_manager.handle_session_command(user_id, chat_id, message)
         
         message_lower = message.lower().strip()
         if message_lower in [cmd.lower() for cmd in self.session_manager.NEW_SESSION_COMMANDS]:
