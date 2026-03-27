@@ -13,6 +13,7 @@ from ..utils.cache import DeduplicationCache
 from ..utils.command_parser import CommandParser
 from .message_handler import MessageHandler
 from .message_sender import MessageSender
+from .chat_info_manager import ChatInfoManager
 from ..models import ParsedCommand
 
 logger = logging.getLogger(__name__)
@@ -52,7 +53,9 @@ class MessageProcessor:
         message_handler: MessageHandler,
         message_sender: MessageSender,
         command_parser: CommandParser,
-        bot_open_id_getter: callable
+        bot_open_id_getter: callable,
+        chat_info_manager: Optional[ChatInfoManager] = None,
+        config_manager: Optional[Any] = None
     ):
         """初始化消息处理器
         
@@ -62,13 +65,17 @@ class MessageProcessor:
             message_sender: 消息发送器
             command_parser: 命令解析器
             bot_open_id_getter: 获取机器人 open_id 的回调函数
+            chat_info_manager: 群聊信息管理器（可选）
+            config_manager: 配置管理器（可选，用于存储群名称）
         """
         self.dedup_cache = dedup_cache
         self.message_handler = message_handler
         self.message_sender = message_sender
         self.command_parser = command_parser
         self._get_bot_open_id = bot_open_id_getter
-    
+        self.chat_info_manager = chat_info_manager
+        self.config_manager = config_manager
+
     def process(self, data: P2ImMessageReceiveV1) -> Optional[ProcessedMessage]:
         """处理接收到的消息
         
@@ -103,6 +110,14 @@ class MessageProcessor:
             final_message = self._process_quoted_message(data, parsed_command)
             
             session_id, session_type = self._extract_session_info(chat_id, chat_type)
+            
+            # 异步获取群聊名称（仅对群聊）
+            if session_type == "group" and self.chat_info_manager:
+                threading.Thread(
+                    target=self._fetch_and_store_chat_name,
+                    args=(chat_id, session_id),
+                    daemon=True
+                ).start()
             
             return ProcessedMessage(
                 message_id=message_id,
@@ -258,3 +273,30 @@ class MessageProcessor:
         session_type = "user" if chat_type == "p2p" else "group"
         logger.info(f"Session: session_id={session_id}, session_type={session_type}")
         return session_id, session_type
+    
+    def _fetch_and_store_chat_name(self, chat_id: str, session_id: str) -> None:
+        """异步获取并存储群聊名称
+        
+        Args:
+            chat_id: 飞书群聊 ID
+            session_id: 系统内的会话 ID
+        """
+        try:
+            if not self.chat_info_manager:
+                return
+            
+            # 获取群聊名称
+            chat_name = self.chat_info_manager.get_chat_name(chat_id)
+            if not chat_name:
+                logger.debug(f"Failed to get chat name for {chat_id}")
+                return
+            
+            logger.info(f"Retrieved chat name for {chat_id}: {chat_name}")
+            
+            # 如果有 config_manager，更新群名称到配置中
+            if self.config_manager:
+                self.config_manager.update_chat_name(session_id, chat_name)
+                logger.info(f"Updated chat_name in config for session {session_id}: {chat_name}")
+            
+        except Exception as e:
+            logger.warning(f"Error fetching and storing chat name: {e}", exc_info=True)

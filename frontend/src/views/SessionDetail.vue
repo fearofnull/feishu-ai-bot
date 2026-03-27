@@ -49,7 +49,11 @@
           <el-descriptions-item label="Chat ID">
             <el-text>{{ session.chat_id || '-' }}</el-text>
           </el-descriptions-item>
-          
+
+          <el-descriptions-item label="飞书群名称">
+            <el-text>{{ session.chat_name || '-' }}</el-text>
+          </el-descriptions-item>
+
           <el-descriptions-item label="创建时间">
             {{ formatTimestamp(session.created_at) }}
           </el-descriptions-item>

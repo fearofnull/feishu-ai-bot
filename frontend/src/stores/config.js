@@ -17,12 +17,13 @@ export const useConfigStore = defineStore('config', {
       return state.configs.filter(config => config.session_type === sessionType)
     },
     
-    // Search configs by session_id
+    // Search configs by session_id or chat_name
     searchConfigs: (state) => (searchTerm) => {
       if (!searchTerm) return state.configs
       const term = searchTerm.toLowerCase()
       return state.configs.filter(config => 
-        config.session_id.toLowerCase().includes(term)
+        config.session_id.toLowerCase().includes(term) ||
+        (config.chat_name && config.chat_name.toLowerCase().includes(term))
       )
     },
     

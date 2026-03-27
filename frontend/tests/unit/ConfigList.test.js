@@ -60,6 +60,7 @@ describe('ConfigList.vue', () => {
     {
       session_id: 'user_001',
       session_type: 'user',
+      chat_name: null,
       config: {
         default_provider: 'claude',
                 response_language: '中文'
@@ -73,6 +74,7 @@ describe('ConfigList.vue', () => {
     {
       session_id: 'group_001',
       session_type: 'group',
+      chat_name: '开发团队',
       config: {
         default_provider: 'gemini',
                 response_language: 'English'
@@ -86,6 +88,7 @@ describe('ConfigList.vue', () => {
     {
       session_id: 'user_002',
       session_type: 'user',
+      chat_name: null,
       config: {
         default_provider: 'openai',
               },
@@ -284,6 +287,33 @@ describe('ConfigList.vue', () => {
       await wrapper.vm.$nextTick()
       
       expect(wrapper.vm.displayedConfigs).toHaveLength(0)
+    })
+
+    it('filters configs by chat_name search term', async () => {
+      wrapper = await createWrapper(mockConfigs)
+      await wrapper.vm.$nextTick()
+      
+      wrapper.vm.searchQuery = '开发'
+      await wrapper.vm.$nextTick()
+      
+      const displayed = wrapper.vm.displayedConfigs
+      expect(displayed).toHaveLength(1)
+      expect(displayed[0].chat_name).toBe('开发团队')
+    })
+
+    it('search works with both session_id and chat_name', async () => {
+      wrapper = await createWrapper(mockConfigs)
+      await wrapper.vm.$nextTick()
+      
+      // Search by session_id
+      wrapper.vm.searchQuery = 'group_001'
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.displayedConfigs).toHaveLength(1)
+      
+      // Search by chat_name
+      wrapper.vm.searchQuery = '开发团队'
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.displayedConfigs).toHaveLength(1)
     })
   })
 

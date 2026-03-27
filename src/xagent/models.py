@@ -107,6 +107,7 @@ class SessionConfig:
     updated_by: Optional[str]  # 最后更新者 user_id
     updated_at: str  # ISO 格式时间戳
     update_count: int  # 更新次数
+    chat_name: Optional[str] = None  # 飞书群名称（可选，仅对群组会话有意义）
 
 
 @dataclass

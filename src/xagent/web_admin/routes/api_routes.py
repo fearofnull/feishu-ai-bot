@@ -212,6 +212,7 @@ def register_api_routes(
                 config_dict = {
                     'session_id': config.session_id,
                     'session_type': config.session_type,
+                    'chat_name': config.chat_name,
                     'config': {
                         'target_project_dir': config.target_project_dir,
                         'response_language': config.response_language,
@@ -316,6 +317,7 @@ def register_api_routes(
             config_dict = {
                 'session_id': config.session_id,
                 'session_type': config.session_type,
+                'chat_name': config.chat_name,
                 'config': {
                     'target_project_dir': config.target_project_dir,
                     'response_language': config.response_language,
@@ -330,7 +332,7 @@ def register_api_routes(
                     'update_count': config.update_count
                 }
             }
-            
+
             return jsonify({
                 'success': True,
                 'data': config_dict
@@ -701,6 +703,7 @@ def register_api_routes(
                 config_dict = {
                     'session_id': config.session_id,
                     'session_type': config.session_type,
+                    'chat_name': config.chat_name,
                     'config': {
                         'target_project_dir': config.target_project_dir,
                         'response_language': config.response_language,
@@ -716,7 +719,7 @@ def register_api_routes(
                     }
                 }
                 export_data['configs'].append(config_dict)
-            
+
             # Convert to JSON
             json_str = json.dumps(export_data, indent=2, ensure_ascii=False)
             json_bytes = json_str.encode('utf-8')
@@ -942,9 +945,10 @@ def register_api_routes(
                         created_at=metadata_obj.get('created_at'),
                         updated_by=metadata_obj.get('updated_by'),
                         updated_at=metadata_obj.get('updated_at'),
-                        update_count=metadata_obj.get('update_count', 0)
+                        update_count=metadata_obj.get('update_count', 0),
+                        chat_name=config_data.get('chat_name')
                     )
-                    
+
                     # Add to config manager
                     config_manager.configs[session_id] = session_config
                     imported_count += 1
@@ -1009,6 +1013,20 @@ def register_api_routes(
             import os
             import json
             from pathlib import Path
+
+            def resolve_chat_name(session_id: str, chat_id: str) -> str:
+                """Resolve chat_name from config by trying both session_id and chat_id keys."""
+                for key in (session_id, chat_id):
+                    cfg = config_manager.configs.get(key)
+                    if cfg and getattr(cfg, 'chat_name', None):
+                        return cfg.chat_name
+
+                # Fallback for historical data where config key and session identifiers differ.
+                for cfg in config_manager.configs.values():
+                    cfg_session_id = getattr(cfg, 'session_id', None)
+                    if cfg_session_id in (session_id, chat_id) and getattr(cfg, 'chat_name', None):
+                        return cfg.chat_name
+                return ''
             
             all_sessions = []
             
@@ -1027,6 +1045,10 @@ def register_api_routes(
                                 'session_id': session_dict.get('session_id'),
                                 'user_id': session_dict.get('user_id'),
                                 'chat_id': session_dict.get('chat_id', ''),
+                                'chat_name': resolve_chat_name(
+                                    session_dict.get('session_id', ''),
+                                    session_dict.get('chat_id', '')
+                                ),
                                 'created_at': session_dict.get('created_at'),
                                 'last_active': session_dict.get('last_active'),
                                 'message_count': message_count,
@@ -1052,6 +1074,10 @@ def register_api_routes(
                                 'session_id': session_data.get('session_id'),
                                 'user_id': session_data.get('user_id'),
                                 'chat_id': session_data.get('chat_id', ''),
+                                'chat_name': resolve_chat_name(
+                                    session_data.get('session_id', ''),
+                                    session_data.get('chat_id', '')
+                                ),
                                 'created_at': session_data.get('created_at'),
                                 'last_active': session_data.get('last_active'),
                                 'message_count': message_count,
@@ -1081,6 +1107,7 @@ def register_api_routes(
                     if search.lower() in str(s.get('session_id', '')).lower() 
                     or search.lower() in str(s.get('user_id', '')).lower()
                     or search.lower() in str(s.get('chat_id', '')).lower()
+                    or search.lower() in str(s.get('chat_name', '')).lower()
                 ]
             
             # Apply sorting
@@ -1190,8 +1217,25 @@ def register_api_routes(
                     }
                 }), 404
             
-            # Add status to session data
+            def resolve_chat_name(session_data_dict: dict) -> str:
+                session_id_in_data = session_data_dict.get('session_id', '')
+                chat_id_in_data = session_data_dict.get('chat_id', '')
+
+                for key in (session_id_in_data, chat_id_in_data):
+                    cfg = config_manager.configs.get(key)
+                    if cfg and getattr(cfg, 'chat_name', None):
+                        return cfg.chat_name
+
+                for cfg in config_manager.configs.values():
+                    cfg_session_id = getattr(cfg, 'session_id', None)
+                    if cfg_session_id in (session_id_in_data, chat_id_in_data) and getattr(cfg, 'chat_name', None):
+                        return cfg.chat_name
+                return ''
+
+            # Return a response payload copy with derived metadata fields.
+            session_data = dict(session_data)
             session_data['status'] = status
+            session_data['chat_name'] = resolve_chat_name(session_data)
             
             return jsonify({
                 'success': True,

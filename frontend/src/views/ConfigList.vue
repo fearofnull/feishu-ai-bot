@@ -45,7 +45,7 @@
         <div class="filter-left">
           <el-input
             v-model="searchQuery"
-            placeholder="搜索 Session ID..."
+            placeholder="搜索 Session ID 或群名称..."
             :prefix-icon="Search"
             clearable
             class="search-input"
@@ -117,7 +117,20 @@
           </template>
         </el-table-column>
 
-        <el-table-column 
+        <el-table-column
+          prop="chat_name"
+          label="飞书群名称"
+          min-width="180"
+          show-overflow-tooltip
+          class-name="mobile-hide-column"
+        >
+          <template #default="{ row }">
+            <span v-if="row.chat_name" class="chat-name-cell">{{ row.chat_name }}</span>
+            <span v-else class="placeholder-text">-</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column
           label="更新时间" 
           width="200"
           align="center"
@@ -519,6 +532,18 @@ onMounted(() => {
 .config-tag {
   font-size: 12px;
   font-weight: 500;
+}
+
+/* Chat Name Cell */
+.chat-name-cell {
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.placeholder-text {
+  color: var(--el-text-color-disabled);
+  font-style: italic;
 }
 
 /* Empty State */

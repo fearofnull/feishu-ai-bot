@@ -156,6 +156,34 @@ class ConfigManager:
         
         return effective
 
+    def update_chat_name(self, session_id: str, chat_name: str) -> None:
+        """更新会话的群聊名称
+        
+        Args:
+            session_id: 会话 ID（群聊 chat_id）
+            chat_name: 群聊名称
+        """
+        try:
+            if session_id not in self.configs:
+                logger.debug(f"Session {session_id} not found, skipping chat_name update")
+                return
+            
+            config = self.configs[session_id]
+            if config.chat_name == chat_name:
+                logger.debug(f"Chat name unchanged for {session_id}")
+                return
+            
+            config.chat_name = chat_name
+            config.updated_at = self._get_timestamp()
+            config.update_count += 1
+            
+            # 保存到持久化存储
+            self.save_configs()
+            
+            logger.info(f"Updated chat_name for session {session_id}: {chat_name}")
+            
+        except Exception as e:
+            logger.warning(f"Error updating chat_name for {session_id}: {e}", exc_info=True)
     
     def set_config(
         self,
@@ -486,6 +514,7 @@ class ConfigManager:
             "updated_by": config.updated_by,
             "updated_at": config.updated_at,
             "update_count": config.update_count,
+            "chat_name": config.chat_name,
         }
     
     def _dict_to_config(self, data: Dict[str, Any]) -> SessionConfig:
@@ -508,6 +537,7 @@ class ConfigManager:
             updated_by=data.get("updated_by"),
             updated_at=data["updated_at"],
             update_count=data.get("update_count", 0),
+            chat_name=data.get("chat_name"),
         )
     
     def _get_timestamp(self) -> str:

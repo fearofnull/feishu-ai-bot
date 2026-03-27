@@ -165,7 +165,11 @@ class XAgent:
         self.executor_registry = ExecutorRegistry()
         self.response_formatter = ResponseFormatter()
         self.message_sender = MessageSender(self.client)
-    
+        
+        # 初始化群聊信息管理器
+        from .messaging.chat_info_manager import ChatInfoManager
+        self.chat_info_manager = ChatInfoManager(self.client)
+
     def _init_provider_config(self):
         """初始化提供商配置"""
         self.provider_config_manager = ProviderConfigManager(
@@ -194,7 +198,9 @@ class XAgent:
             message_handler=self.message_handler,
             message_sender=self.message_sender,
             command_parser=self.command_parser,
-            bot_open_id_getter=lambda: self.bot_open_id
+            bot_open_id_getter=lambda: self.bot_open_id,
+            chat_info_manager=self.chat_info_manager,
+            config_manager=self.config_manager
         )
         
         self.command_dispatcher = CommandDispatcher(

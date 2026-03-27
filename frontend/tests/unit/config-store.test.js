@@ -54,9 +54,9 @@ describe('Config Store', () => {
   describe('Getters', () => {
     beforeEach(() => {
       store.configs = [
-        { session_id: 'user1', session_type: 'user', metadata: { updated_at: '2024-01-01T10:00:00Z' } },
-        { session_id: 'group1', session_type: 'group', metadata: { updated_at: '2024-01-02T10:00:00Z' } },
-        { session_id: 'user2', session_type: 'user', metadata: { updated_at: '2024-01-03T10:00:00Z' } }
+        { session_id: 'user1', session_type: 'user', chat_name: null, metadata: { updated_at: '2024-01-01T10:00:00Z' } },
+        { session_id: 'group1', session_type: 'group', chat_name: '开发团队', metadata: { updated_at: '2024-01-02T10:00:00Z' } },
+        { session_id: 'user2', session_type: 'user', chat_name: null, metadata: { updated_at: '2024-01-03T10:00:00Z' } }
       ]
     })
 
@@ -77,6 +77,12 @@ describe('Config Store', () => {
       expect(results.every(c => c.session_id.includes('user'))).toBe(true)
     })
 
+    it('searchConfigs should filter by chat_name', () => {
+      const results = store.searchConfigs('开发')
+      expect(results).toHaveLength(1)
+      expect(results[0].chat_name).toBe('开发团队')
+    })
+
     it('searchConfigs should be case insensitive', () => {
       const results = store.searchConfigs('USER')
       expect(results).toHaveLength(2)
@@ -85,6 +91,14 @@ describe('Config Store', () => {
     it('searchConfigs should return all configs when no search term', () => {
       const results = store.searchConfigs('')
       expect(results).toHaveLength(3)
+    })
+
+    it('searchConfigs should search across both session_id and chat_name', () => {
+      let results = store.searchConfigs('group1')
+      expect(results).toHaveLength(1)
+      
+      results = store.searchConfigs('开发团队')
+      expect(results).toHaveLength(1)
     })
 
     it('sortedConfigs should sort by update time descending', () => {

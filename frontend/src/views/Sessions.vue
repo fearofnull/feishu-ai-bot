@@ -10,7 +10,7 @@
     <div class="filters">
       <el-input
         v-model="searchQuery"
-        placeholder="搜索用户ID或会话ID..."
+        placeholder="搜索用户ID、会话ID、群ID或群名称..."
         clearable
         class="search-input"
       >
@@ -67,7 +67,13 @@
             <el-text truncated>{{ row.chat_id || '-' }}</el-text>
           </template>
         </el-table-column>
-        
+
+        <el-table-column prop="chat_name" label="飞书群名称" width="220">
+          <template #default="{ row }">
+            <el-text truncated>{{ row.chat_name || '-' }}</el-text>
+          </template>
+        </el-table-column>
+
         <el-table-column label="消息数" width="100" align="center">
           <template #default="{ row }">
             <el-tag type="info" size="small">{{ row.message_count }}</el-tag>
@@ -157,7 +163,8 @@ const filteredSessions = computed(() => {
   return sessions.value.filter(session => 
     session.session_id.toLowerCase().includes(query) ||
     session.user_id.toLowerCase().includes(query) ||
-    (session.chat_id && session.chat_id.toLowerCase().includes(query))
+    (session.chat_id && session.chat_id.toLowerCase().includes(query)) ||
+    (session.chat_name && session.chat_name.toLowerCase().includes(query))
   )
 })
 

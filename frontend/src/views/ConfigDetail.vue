@@ -38,6 +38,9 @@
               {{ currentConfig.session_type === 'user' ? '用户' : '群组' }}
             </el-tag>
           </el-descriptions-item>
+          <el-descriptions-item v-if="currentConfig.chat_name" label="飞书群名称">
+            {{ currentConfig.chat_name }}
+          </el-descriptions-item>
         </el-descriptions>
       </el-card>
 
